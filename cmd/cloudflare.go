@@ -6,21 +6,32 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// cloudflareCmd represents the cloudflare command
+var (
+	ipv4Flag bool
+	ipv6Flag bool
+)
+
 var cloudflareCmd = &cobra.Command{
 	Use:   "cloudflare",
 	Short: "Get Cloudflare ip ranges",
-	Long:  `Get Cloudflare ip ranges`,
+	Long:  `Get Cloudflare IPv4 and IPv6 ranges.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := utils.GetCiprLogger()
 
 		logger.Println("cloudflare called")
 
-		cloudflare.GetCloudflareIPv4Ranges()
-		cloudflare.GetCloudflareIPv6Ranges()
+		if ipv4Flag || (!ipv4Flag && !ipv6Flag) {
+			cloudflare.GetCloudflareIPv4Ranges()
+		}
+		if ipv6Flag || (!ipv4Flag && !ipv6Flag) {
+			cloudflare.GetCloudflareIPv6Ranges()
+		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(cloudflareCmd)
+
+	cloudflareCmd.Flags().BoolVar(&ipv4Flag, "ipv4", false, "Get only IPv4 ranges")
+	cloudflareCmd.Flags().BoolVar(&ipv6Flag, "ipv6", false, "Get only IPv6 ranges")
 }
