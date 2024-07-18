@@ -13,7 +13,7 @@ var (
 
 var cloudflareCmd = &cobra.Command{
 	Use:   "cloudflare",
-	Short: "Get Cloudflare ip ranges",
+	Short: "Get Cloudflare IP ranges",
 	Long:  `Get Cloudflare IPv4 and IPv6 ranges.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := utils.GetCiprLogger()
