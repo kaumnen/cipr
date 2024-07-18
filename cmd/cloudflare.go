@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	ipv4Flag bool
-	ipv6Flag bool
+	cloudflareIPv4Flag bool
+	cloudflareIPv6Flag bool
 )
 
 var cloudflareCmd = &cobra.Command{
@@ -20,10 +20,10 @@ var cloudflareCmd = &cobra.Command{
 
 		logger.Println("cloudflare called")
 
-		if ipv4Flag || (!ipv4Flag && !ipv6Flag) {
+		if cloudflareIPv4Flag || (!cloudflareIPv4Flag && !cloudflareIPv6Flag) {
 			cloudflare.GetCloudflareIPv4Ranges()
 		}
-		if ipv6Flag || (!ipv4Flag && !ipv6Flag) {
+		if cloudflareIPv6Flag || (!cloudflareIPv4Flag && !cloudflareIPv6Flag) {
 			cloudflare.GetCloudflareIPv6Ranges()
 		}
 	},
@@ -32,6 +32,6 @@ var cloudflareCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(cloudflareCmd)
 
-	cloudflareCmd.Flags().BoolVar(&ipv4Flag, "ipv4", false, "Get only IPv4 ranges")
-	cloudflareCmd.Flags().BoolVar(&ipv6Flag, "ipv6", false, "Get only IPv6 ranges")
+	cloudflareCmd.Flags().BoolVar(&cloudflareIPv4Flag, "ipv4", false, "Get only IPv4 ranges")
+	cloudflareCmd.Flags().BoolVar(&cloudflareIPv6Flag, "ipv6", false, "Get only IPv6 ranges")
 }
