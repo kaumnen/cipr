@@ -32,19 +32,26 @@ type IPsData struct {
 func GetIPRanges(ipType string, filter string) {
 	raw_data := utils.GetReq("https://ip-ranges.amazonaws.com/ip-ranges.json")
 
-	filterValues := separateFilters(filter, false)
+	filterValues := separateFilters(filter)
 
 	printIPRanges(raw_data, ipType, filterValues)
 }
 
-func separateFilters(filterFlagValues string, returnSlice bool) []string {
+func separateFilters(filterFlagValues string) []string {
+	logger := utils.GetCiprLogger()
 	var filterSlice []string
 
 	removeFilterWhitespace := strings.ReplaceAll(filterFlagValues, " ", "")
 	filterContents := strings.Split(removeFilterWhitespace, ",")
 
 	for _, val := range filterContents {
-		filterSlice = append(filterSlice, strings.TrimSpace(val))
+		if len(val) > 0 {
+			filterSlice = append(filterSlice, strings.TrimSpace(val))
+		}
+	}
+
+	if len(filterSlice) == 0 {
+		logger.Fatalf("Filter flag needs actual values!")
 	}
 
 	return filterSlice
