@@ -23,10 +23,10 @@ var awsCmd = &cobra.Command{
 		logger.Println("AWS subcommand called")
 
 		if awsIPv4Flag || (!awsIPv4Flag && !awsIPv6Flag) {
-			aws.GetIPRanges("ipv4", awsIPFilterFlag)
+			aws.GetIPRanges("ipv4", awsIPFilterFlag, utils.GetReq)
 		}
 		if awsIPv6Flag || (!awsIPv4Flag && !awsIPv6Flag) {
-			aws.GetIPRanges("ipv6", awsIPFilterFlag)
+			aws.GetIPRanges("ipv6", awsIPFilterFlag, utils.GetReq)
 		}
 	},
 }
