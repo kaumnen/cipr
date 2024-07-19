@@ -34,7 +34,9 @@ func GetIPRanges(ipType string, filter string, getReqFunc func(string) string) {
 
 	filterValues := separateFilters(filter)
 
-	printIPRanges(raw_data, ipType, filterValues)
+	readyIPs := filtrateIPRanges(raw_data, ipType, filterValues)
+
+	printIPRanges(readyIPs)
 }
 
 func separateFilters(filterFlagValues string) []string {
@@ -57,68 +59,71 @@ func separateFilters(filterFlagValues string) []string {
 	return filterSlice
 }
 
-func printIPRanges(rawData, ipType string, filterSlice []string) {
+func filtrateIPRanges(rawData, ipType string, filterSlice []string) []string {
 	logger := utils.GetCiprLogger()
 	var data IPsData
+
+	result := []string{}
 
 	err := json.Unmarshal([]byte(rawData), &data)
 	if err != nil {
 		logger.Fatalf("Error unmarshalling JSON: %v", err)
 	}
 
-	fmt.Printf("Sync Token: %s\n", data.SyncToken)
-	fmt.Printf("Create Date: %s\n", data.CreateDate)
-
 	if ipType == "ipv4" {
-		fmt.Println("Prefixes:")
 		for _, prefix := range data.Prefixes {
+			filteredIPv4String := fmt.Sprintf("%s,%s,%s,%s",
+				prefix.IPAddress, prefix.Region, prefix.Service, prefix.NetworkBorderGroup)
 			switch len(filterSlice) {
 			case 0:
-				fmt.Printf("  IP Prefix: %s, Region: %s, Service: %s, Network Border Group: %s\n",
-					prefix.IPAddress, prefix.Region, prefix.Service, prefix.NetworkBorderGroup)
+				result = append(result, filteredIPv4String)
 			case 1:
 				if prefix.Region == filterSlice[0] {
-					fmt.Printf("  IP Prefix: %s, Region: %s, Service: %s, Network Border Group: %s\n",
-						prefix.IPAddress, prefix.Region, prefix.Service, prefix.NetworkBorderGroup)
+					result = append(result, filteredIPv4String)
 				}
 			case 2:
 				if prefix.Region == filterSlice[0] && prefix.Service == filterSlice[1] {
-					fmt.Printf("  IP Prefix: %s, Region: %s, Service: %s, Network Border Group: %s\n",
-						prefix.IPAddress, prefix.Region, prefix.Service, prefix.NetworkBorderGroup)
+					result = append(result, filteredIPv4String)
 				}
 			case 3:
 				if prefix.Region == filterSlice[0] && prefix.Service == filterSlice[1] && prefix.NetworkBorderGroup == filterSlice[2] {
-					fmt.Printf("  IP Prefix: %s, Region: %s, Service: %s, Network Border Group: %s\n",
-						prefix.IPAddress, prefix.Region, prefix.Service, prefix.NetworkBorderGroup)
+					result = append(result, filteredIPv4String)
 				}
-			default:
-				fmt.Println("Nothing found!")
-				return
 			}
 		}
 	} else if ipType == "ipv6" {
-		fmt.Println("IPv6 Prefixes:")
 		for _, ipv6prefix := range data.IPv6Prefixes {
+			filteredIPv6String := fmt.Sprintf("%s,%s,%s,%s",
+				ipv6prefix.IPv6Address, ipv6prefix.Region, ipv6prefix.Service, ipv6prefix.NetworkBorderGroup)
 			switch len(filterSlice) {
+			case 0:
+				result = append(result, filteredIPv6String)
 			case 1:
 				if ipv6prefix.Region == filterSlice[0] {
-					fmt.Printf("  IPv6 Prefix: %s, Region: %s, Service: %s, Network Border Group: %s\n",
-						ipv6prefix.IPv6Address, ipv6prefix.Region, ipv6prefix.Service, ipv6prefix.NetworkBorderGroup)
+					result = append(result, filteredIPv6String)
 				}
 			case 2:
 				if ipv6prefix.Region == filterSlice[0] && ipv6prefix.Service == filterSlice[1] {
-					fmt.Printf("  IPv6 Prefix: %s, Region: %s, Service: %s, Network Border Group: %s\n",
-						ipv6prefix.IPv6Address, ipv6prefix.Region, ipv6prefix.Service, ipv6prefix.NetworkBorderGroup)
+					result = append(result, filteredIPv6String)
 				}
 			case 3:
 				if ipv6prefix.Region == filterSlice[0] && ipv6prefix.Service == filterSlice[1] && ipv6prefix.NetworkBorderGroup == filterSlice[2] {
-					fmt.Printf("  IPv6 Prefix: %s, Region: %s, Service: %s, Network Border Group: %s\n",
-						ipv6prefix.IPv6Address, ipv6prefix.Region, ipv6prefix.Service, ipv6prefix.NetworkBorderGroup)
+					result = append(result, filteredIPv6String)
 				}
-			default:
-				fmt.Println("Nothing found!")
-				return
 			}
 		}
+	}
+
+	if len(result) == 0 {
+		fmt.Println("Nothing found!")
+		return []string{}
+	}
+
+	return result
+}
+
+func printIPRanges(IPranges []string) {
+	for _, val := range IPranges {
+		fmt.Println(val)
 	}
 }
