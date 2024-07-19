@@ -29,8 +29,8 @@ type IPsData struct {
 	IPv6Prefixes []IPv6Prefix `json:"ipv6_prefixes"`
 }
 
-func GetIPRanges(ipType string, filter string) {
-	raw_data := utils.GetReq("https://ip-ranges.amazonaws.com/ip-ranges.json")
+func GetIPRanges(ipType string, filter string, getReqFunc func(string) string) {
+	raw_data := getReqFunc("https://ip-ranges.amazonaws.com/ip-ranges.json")
 
 	filterValues := separateFilters(filter)
 
@@ -50,7 +50,7 @@ func separateFilters(filterFlagValues string) []string {
 		}
 	}
 
-	if len(filterSlice) == 0 {
+	if len(filterSlice) == 0 && strings.Contains(filterFlagValues, ",") {
 		logger.Fatalf("Filter flag needs actual values!")
 	}
 
@@ -73,6 +73,9 @@ func printIPRanges(rawData, ipType string, filterSlice []string) {
 		fmt.Println("Prefixes:")
 		for _, prefix := range data.Prefixes {
 			switch len(filterSlice) {
+			case 0:
+				fmt.Printf("  IP Prefix: %s, Region: %s, Service: %s, Network Border Group: %s\n",
+					prefix.IPAddress, prefix.Region, prefix.Service, prefix.NetworkBorderGroup)
 			case 1:
 				if prefix.Region == filterSlice[0] {
 					fmt.Printf("  IP Prefix: %s, Region: %s, Service: %s, Network Border Group: %s\n",
