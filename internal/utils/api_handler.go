@@ -8,8 +8,6 @@ import (
 
 func GetReq(endpoint string) string {
 	logger := GetCiprLogger()
-
-	logger.Printf("Calling API endpoint: %s", endpoint)
 	response, err := http.Get(endpoint)
 
 	if err != nil {
