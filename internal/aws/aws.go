@@ -29,6 +29,23 @@ type IPsData struct {
 	IPv6Prefixes []IPv6Prefix `json:"ipv6_prefixes"`
 }
 
+type IPPrefix interface {
+	GetIPAddress() string
+	GetRegion() string
+	GetService() string
+	GetNetworkBorderGroup() string
+}
+
+func (p IPv4Prefix) GetIPAddress() string          { return p.IPAddress }
+func (p IPv4Prefix) GetRegion() string             { return p.Region }
+func (p IPv4Prefix) GetService() string            { return p.Service }
+func (p IPv4Prefix) GetNetworkBorderGroup() string { return p.NetworkBorderGroup }
+
+func (p IPv6Prefix) GetIPAddress() string          { return p.IPv6Address }
+func (p IPv6Prefix) GetRegion() string             { return p.Region }
+func (p IPv6Prefix) GetService() string            { return p.Service }
+func (p IPv6Prefix) GetNetworkBorderGroup() string { return p.NetworkBorderGroup }
+
 func GetIPRanges(ipType, filter, verbosity string, getReqFunc func(string) string) {
 	raw_data := getReqFunc("https://ip-ranges.amazonaws.com/ip-ranges.json")
 
@@ -59,87 +76,87 @@ func separateFilters(filterFlagValues string) []string {
 	return filterSlice
 }
 
-func filtrateIPRanges(rawData, ipType string, filterSlice []string) []string {
+func filtrateIPRanges(rawData, ipType string, filterSlice []string) []IPPrefix {
 	logger := utils.GetCiprLogger()
 	var data IPsData
-
-	result := []string{}
 
 	err := json.Unmarshal([]byte(rawData), &data)
 	if err != nil {
 		logger.Fatalf("Error unmarshalling JSON: %v", err)
 	}
 
+	var prefixes []IPPrefix
+	result := []IPPrefix{}
+
 	if ipType == "ipv4" {
 		for _, prefix := range data.Prefixes {
-			filteredIPv4String := fmt.Sprintf("%s,%s,%s,%s",
-				prefix.IPAddress, prefix.Region, prefix.Service, prefix.NetworkBorderGroup)
-			switch len(filterSlice) {
-			case 0:
-				result = append(result, filteredIPv4String)
-			case 1:
-				if prefix.Region == filterSlice[0] {
-					result = append(result, filteredIPv4String)
-				}
-			case 2:
-				if prefix.Region == filterSlice[0] && prefix.Service == filterSlice[1] {
-					result = append(result, filteredIPv4String)
-				}
-			case 3:
-				if prefix.Region == filterSlice[0] && prefix.Service == filterSlice[1] && prefix.NetworkBorderGroup == filterSlice[2] {
-					result = append(result, filteredIPv4String)
-				}
-			}
+			prefixes = append(prefixes, prefix)
 		}
 	} else if ipType == "ipv6" {
-		for _, ipv6prefix := range data.IPv6Prefixes {
-			filteredIPv6String := fmt.Sprintf("%s,%s,%s,%s",
-				ipv6prefix.IPv6Address, ipv6prefix.Region, ipv6prefix.Service, ipv6prefix.NetworkBorderGroup)
-			switch len(filterSlice) {
-			case 0:
-				result = append(result, filteredIPv6String)
-			case 1:
-				if ipv6prefix.Region == filterSlice[0] {
-					result = append(result, filteredIPv6String)
-				}
-			case 2:
-				if ipv6prefix.Region == filterSlice[0] && ipv6prefix.Service == filterSlice[1] {
-					result = append(result, filteredIPv6String)
-				}
-			case 3:
-				if ipv6prefix.Region == filterSlice[0] && ipv6prefix.Service == filterSlice[1] && ipv6prefix.NetworkBorderGroup == filterSlice[2] {
-					result = append(result, filteredIPv6String)
-				}
-			}
+		for _, prefix := range data.IPv6Prefixes {
+			prefixes = append(prefixes, prefix)
+		}
+	}
+
+	for _, prefix := range prefixes {
+		if matchesFilter(prefix, filterSlice) {
+			result = append(result, prefix)
 		}
 	}
 
 	if len(result) == 0 {
 		fmt.Println("Nothing found!")
-		return []string{}
+		return nil
 	}
 
 	return result
 }
 
-func printIPRanges(IPranges []string, verbosity string) {
-	var printString string
+func matchesFilter(prefix IPPrefix, filterSlice []string) bool {
+	switch len(filterSlice) {
+	case 0:
+		return true
+	case 1:
+		return prefix.GetRegion() == filterSlice[0]
+	case 2:
+		return prefix.GetRegion() == filterSlice[0] && prefix.GetService() == filterSlice[1]
+	case 3:
+		return prefix.GetRegion() == filterSlice[0] && prefix.GetService() == filterSlice[1] && prefix.GetNetworkBorderGroup() == filterSlice[2]
+	default:
+		return false
+	}
+}
+
+func printIPRanges(IPranges []IPPrefix, verbosity string) {
+	if len(IPranges) == 0 {
+		fmt.Println("No IP ranges to display.")
+		return
+	}
+
+	var printFunc func(IPPrefix)
 
 	switch verbosity {
 	case "none":
-		printString = "%s"
+		printFunc = func(ip IPPrefix) {
+			fmt.Println(ip.GetIPAddress())
+		}
 	case "mini":
-		printString = "%s,%s,%s,%s"
+		printFunc = func(ip IPPrefix) {
+			fmt.Printf("%s,%s,%s,%s\n",
+				ip.GetIPAddress(), ip.GetRegion(), ip.GetService(), ip.GetNetworkBorderGroup())
+		}
 	case "full":
-		printString = "IP Prefix: %s, Region: %s, Service: %s, Network Border Group: %s"
+		printFunc = func(ip IPPrefix) {
+			fmt.Printf("IP Prefix: %s, Region: %s, Service: %s, Network Border Group: %s\n",
+				ip.GetIPAddress(), ip.GetRegion(), ip.GetService(), ip.GetNetworkBorderGroup())
+		}
 	default:
-		printString = "%s"
+		printFunc = func(ip IPPrefix) {
+			fmt.Println(ip.GetIPAddress())
+		}
 	}
 
-	fmt.Println(IPranges)
-
-	for _, val := range IPranges {
-
-		fmt.Printf(printString, val[0], val[1], val[2], val[3])
+	for _, ip := range IPranges {
+		printFunc(ip)
 	}
 }
