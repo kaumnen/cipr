@@ -19,10 +19,6 @@ var awsCmd = &cobra.Command{
 	Short: "Get AWS IP ranges.",
 	Long:  `Get AWS IPv4 and IPv6 ranges.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := utils.GetCiprLogger()
-
-		logger.Println("AWS subcommand called")
-
 		if awsIPv4Flag || (!awsIPv4Flag && !awsIPv6Flag) {
 			aws.GetIPRanges("ipv4", awsIPFilterFlag, awsVerbosity, utils.GetReq)
 		}
