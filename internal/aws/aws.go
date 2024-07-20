@@ -29,14 +29,14 @@ type IPsData struct {
 	IPv6Prefixes []IPv6Prefix `json:"ipv6_prefixes"`
 }
 
-func GetIPRanges(ipType string, filter string, getReqFunc func(string) string) {
+func GetIPRanges(ipType, filter, verbosity string, getReqFunc func(string) string) {
 	raw_data := getReqFunc("https://ip-ranges.amazonaws.com/ip-ranges.json")
 
 	filterValues := separateFilters(filter)
 
 	readyIPs := filtrateIPRanges(raw_data, ipType, filterValues)
 
-	printIPRanges(readyIPs)
+	printIPRanges(readyIPs, verbosity)
 }
 
 func separateFilters(filterFlagValues string) []string {
@@ -122,8 +122,24 @@ func filtrateIPRanges(rawData, ipType string, filterSlice []string) []string {
 	return result
 }
 
-func printIPRanges(IPranges []string) {
+func printIPRanges(IPranges []string, verbosity string) {
+	var printString string
+
+	switch verbosity {
+	case "none":
+		printString = "%s"
+	case "mini":
+		printString = "%s,%s,%s,%s"
+	case "full":
+		printString = "IP Prefix: %s, Region: %s, Service: %s, Network Border Group: %s"
+	default:
+		printString = "%s"
+	}
+
+	fmt.Println(IPranges)
+
 	for _, val := range IPranges {
-		fmt.Println(val)
+
+		fmt.Printf(printString, val[0], val[1], val[2], val[3])
 	}
 }
