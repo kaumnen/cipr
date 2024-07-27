@@ -1,4 +1,4 @@
-name: Tag and Release for Apple Silicon
+name: Release for Apple Silicon
 
 on:
   workflow_dispatch:
@@ -20,9 +20,15 @@ jobs:
 
       - name: Update version in code
         run: |
-          sed -i '' 's/Version: "v0.0.0-dev"/Version: "${{ github.event.inputs.version }}"/' main.go
+          sed -i '' 's/Version: "v[0-9]*\.[0-9]*\.[0-9]*.*"/Version: "${{ github.event.inputs.version }}"/' main.go
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code || echo "changes=true" >> $GITHUB_OUTPUT
 
       - name: Commit version update
+        if: steps.git-check.outputs.changes == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
