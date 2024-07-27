@@ -20,12 +20,12 @@ func TestSeparateFilters(t *testing.T) {
 		{
 			name:     "Two items",
 			input:    "one,two",
-			expected: []string{"one", "two"},
+			expected: []string{"one", "two", "*"},
 		},
 		{
 			name:     "Single item",
 			input:    "single,",
-			expected: []string{"single"},
+			expected: []string{"single", "*", "*"},
 		},
 	}
 
@@ -48,7 +48,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 		{
 			name:        "ipv4 - filters: us-east-1 region, EBS service",
 			ipType:      "ipv4",
-			filterSlice: []string{"us-east-1", "EBS"},
+			filterSlice: []string{"us-east-1", "EBS", "*"},
 			expected: []IPPrefix{
 				IPv4Prefix{IPAddress: "44.192.140.112/28", Region: "us-east-1", Service: "EBS", NetworkBorderGroup: "us-east-1"},
 				IPv4Prefix{IPAddress: "44.192.140.128/29", Region: "us-east-1", Service: "EBS", NetworkBorderGroup: "us-east-1"},
