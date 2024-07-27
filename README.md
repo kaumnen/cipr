@@ -7,7 +7,15 @@ This tool retrieves IP ranges from various providers, currently supporting AWS a
 
 ## Installation
 
-//todo
+```bash
+curl https://raw.githubusercontent.com/kaumnen/cipr/main/install.sh | bash
+```
+
+## Uninstallation
+
+```bash
+curl https://raw.githubusercontent.com/kaumnen/cipr/main/uninstall.sh | bash
+```
 
 ## Usage
 
