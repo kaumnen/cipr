@@ -1,4 +1,4 @@
-name: Go-Build-And-Test
+name: Build and test cipr cli tool
 
 on:
   pull_request:
