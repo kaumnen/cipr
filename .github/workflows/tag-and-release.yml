@@ -1,60 +1,38 @@
-name: Release for Apple Silicon
+name: Release please
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to release (e.g., v1.2.3)"
-        required: true
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
-  release:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: google-github-actions/release-please-action@v4
+        id: release
+        with:
+          release-type: go
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-release:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22
-
-      - name: Update version in code
-        run: |
-          sed -i '' 's/Version: "v[0-9]*\.[0-9]*\.[0-9]*.*"/Version: "${{ github.event.inputs.version }}"/' main.go
-
-      - name: Check for changes
-        id: git-check
-        run: |
-          git diff --exit-code || echo "changes=true" >> $GITHUB_OUTPUT
-
-      - name: Commit version update
-        if: steps.git-check.outputs.changes == 'true'
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git commit -am "Bump version to ${{ github.event.inputs.version }}"
-          git push https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git HEAD:main
-
-      - name: Create Tag
-        run: |
-          git tag ${{ github.event.inputs.version }}
-          git push https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git ${{ github.event.inputs.version }}
-
-      - name: Get commit list
-        id: get_commits
-        run: |
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -z "$LAST_TAG" ]; then
-            COMMIT_LIST=$(git log --pretty=format:"- %s" --reverse)
-          else
-            COMMIT_LIST=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s" --reverse)
-          fi
-          echo "COMMIT_LIST<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMMIT_LIST" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          go-version: "1.22"
 
       - name: Build for Apple Silicon
         env:
@@ -63,17 +41,8 @@ jobs:
         run: |
           go build -o cipr-darwin-arm64
 
-      - name: Create Release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ github.event.inputs.version }}
-          name: Release ${{ github.event.inputs.version }}
-          body: |
-            Release notes for version ${{ github.event.inputs.version }}
-
-            Changes in this release:
-            ${{ steps.get_commits.outputs.COMMIT_LIST }}
-          draft: false
-          prerelease: false
-          artifacts: "cipr-darwin-arm64"
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Release Asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ needs.release-please.outputs.tag_name }} cipr-darwin-arm64
