@@ -78,7 +78,6 @@ func separateFilters(filterFlagValues string) []string {
 		filterSlice = filterSlice[:3]
 	}
 
-	fmt.Println(filterSlice)
 	return filterSlice
 }
 
