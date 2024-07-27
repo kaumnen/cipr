@@ -43,6 +43,19 @@ jobs:
           git tag ${{ github.event.inputs.version }}
           git push https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git ${{ github.event.inputs.version }}
 
+      - name: Get commit list
+        id: get_commits
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            COMMIT_LIST=$(git log --pretty=format:"- %s" --reverse)
+          else
+            COMMIT_LIST=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s" --reverse)
+          fi
+          echo "COMMIT_LIST<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_LIST" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Build for Apple Silicon
         env:
           GOOS: darwin
@@ -55,7 +68,11 @@ jobs:
         with:
           tag: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
-          body: "Release notes for version ${{ github.event.inputs.version }}"
+          body: |
+            Release notes for version ${{ github.event.inputs.version }}
+
+            Changes in this release:
+            ${{ steps.get_commits.outputs.COMMIT_LIST }}
           draft: false
           prerelease: false
           artifacts: "cipr-darwin-arm64"
