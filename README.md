@@ -1,6 +1,9 @@
 ## cipr: A CLI tool for retrieving IP ranges
 
-This tool retrieves IP ranges from various providers, such as AWS and Cloudflare.
+This tool retrieves IP ranges from various providers, currently supporting AWS and Cloudflare.
+
+> [!WARNING]
+> This tool is still WIP.
 
 ## Installation
 
