@@ -57,22 +57,28 @@ func GetIPRanges(ipType, filter, verbosity string, getReqFunc func(string) strin
 }
 
 func separateFilters(filterFlagValues string) []string {
-	logger := utils.GetCiprLogger()
 	var filterSlice []string
 
 	removeFilterWhitespace := strings.ReplaceAll(filterFlagValues, " ", "")
 	filterContents := strings.Split(removeFilterWhitespace, ",")
 
 	for _, val := range filterContents {
-		if len(val) > 0 {
-			filterSlice = append(filterSlice, strings.TrimSpace(val))
+		if val == "" {
+			filterSlice = append(filterSlice, "*")
+		} else {
+			filterSlice = append(filterSlice, val)
 		}
 	}
 
-	if len(filterSlice) == 0 && strings.Contains(filterFlagValues, ",") {
-		logger.Fatalf("Filter flag needs actual values!")
+	for len(filterSlice) < 3 {
+		filterSlice = append(filterSlice, "*")
 	}
 
+	if len(filterSlice) > 3 {
+		filterSlice = filterSlice[:3]
+	}
+
+	fmt.Println(filterSlice)
 	return filterSlice
 }
 
@@ -113,18 +119,9 @@ func filtrateIPRanges(rawData, ipType string, filterSlice []string) []IPPrefix {
 }
 
 func matchesFilter(prefix IPPrefix, filterSlice []string) bool {
-	switch len(filterSlice) {
-	case 0:
-		return true
-	case 1:
-		return prefix.GetRegion() == filterSlice[0]
-	case 2:
-		return prefix.GetRegion() == filterSlice[0] && prefix.GetService() == filterSlice[1]
-	case 3:
-		return prefix.GetRegion() == filterSlice[0] && prefix.GetService() == filterSlice[1] && prefix.GetNetworkBorderGroup() == filterSlice[2]
-	default:
-		return false
-	}
+	return (filterSlice[0] == "*" || strings.EqualFold(prefix.GetRegion(), filterSlice[0])) &&
+		(filterSlice[1] == "*" || strings.EqualFold(prefix.GetService(), filterSlice[1])) &&
+		(filterSlice[2] == "*" || strings.EqualFold(prefix.GetNetworkBorderGroup(), filterSlice[2]))
 }
 
 func printIPRanges(IPranges []IPPrefix, verbosity string) {
