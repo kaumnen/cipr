@@ -2,21 +2,21 @@ name: Go-Build-And-Test
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version-file: go.mod
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
 
-    - name: Build app
-      run: go build -v ./...
+      - name: Build app
+        run: go build -v ./...
 
-    - name: Run Tests
-      run: go test -v -cover ./...
+      - name: Run Tests
+        run: go test -v -cover ./...
