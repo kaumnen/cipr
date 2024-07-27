@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/kaumnen/cipr/compare/v0.1.0...v0.2.0) (2024-07-27)
+
+
+### Features
+
+* add release please manifest ([b232031](https://github.com/kaumnen/cipr/commit/b232031f963cadf968a5147f78a1b1e87278a3a2))
+* update .release-please-manifest.json ([53a9695](https://github.com/kaumnen/cipr/commit/53a969574c266d51d4fd86cb35df8d007399c036))
+
 ## [0.1.0](https://github.com/kaumnen/cipr/compare/v0.0.1...v0.1.0) (2024-07-27)
 
 
