@@ -1,3 +1,4 @@
 {
-  "cmd/root.go": "v0.0.0-dev"
+  "cmd/root.go": "v0.0.0-dev",
+  ".": "0.2.0"
 }
