@@ -5,13 +5,15 @@ This tool retrieves IP ranges from various providers, currently supporting AWS a
 > [!WARNING]
 > This tool is still WIP.
 
-## Installation
+## Install or Uninstall
+
+- Install
 
 ```bash
 curl https://raw.githubusercontent.com/kaumnen/cipr/main/install.sh | bash
 ```
 
-## Uninstallation
+- Uninstall
 
 ```bash
 curl https://raw.githubusercontent.com/kaumnen/cipr/main/uninstall.sh | bash
@@ -150,5 +152,8 @@ cipr cloudflare --ipv6
 ```
 
 ## Contributing
+
+> [!NOTE]
+> This project is following [Conventional Commits](https://www.conventionalcommits.org/).
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
