@@ -1,0 +1,53 @@
+name: Tag and Release for Apple Silicon
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., v1.2.3)"
+        required: true
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.22
+
+      - name: Update version in code
+        run: |
+          sed -i '' 's/Version: "v0.0.0-dev"/Version: "${{ github.event.inputs.version }}"/' main.go
+
+      - name: Commit version update
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -am "Bump version to ${{ github.event.inputs.version }}"
+          git push
+
+      - name: Create Tag
+        run: |
+          git tag ${{ github.event.inputs.version }}
+          git push origin ${{ github.event.inputs.version }}
+
+      - name: Build for Apple Silicon
+        env:
+          GOOS: darwin
+          GOARCH: arm64
+        run: |
+          go build -o cipr-darwin-arm64
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.event.inputs.version }}
+          name: Release ${{ github.event.inputs.version }}
+          body: "Release notes for version ${{ github.event.inputs.version }}"
+          draft: false
+          prerelease: false
+          artifacts: "cipr-darwin-arm64"
+          token: ${{ secrets.GITHUB_TOKEN }}
