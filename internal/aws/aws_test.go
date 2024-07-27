@@ -1,6 +1,9 @@
 package aws
 
 import (
+	"bytes"
+	"io"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -86,6 +89,75 @@ func TestFiltrateIPRanges(t *testing.T) {
 				assert.Equal(t, expectedIP.GetService(), result[i].GetService(), "Service mismatch at index %d", i)
 				assert.Equal(t, expectedIP.GetNetworkBorderGroup(), result[i].GetNetworkBorderGroup(), "Network border group mismatch at index %d", i)
 			}
+		})
+	}
+}
+
+func TestPrintIPRanges(t *testing.T) {
+	testCases := []struct {
+		name           string
+		IPranges       []IPPrefix
+		verbosity      string
+		expectedOutput string
+	}{
+		{
+			name:           "Empty IP range list",
+			IPranges:       []IPPrefix{},
+			verbosity:      "none",
+			expectedOutput: "No IP ranges to display.\n",
+		},
+		{
+			name: "IPv4 - Verbosity None",
+			IPranges: []IPPrefix{
+				IPv4Prefix{IPAddress: "52.216.160.0/23", Region: "us-east-1", Service: "S3", NetworkBorderGroup: "us-east-1"},
+				IPv4Prefix{IPAddress: "54.240.224.0/21", Region: "us-west-1", Service: "dynamodb", NetworkBorderGroup: "us-west-1"},
+			},
+			verbosity:      "none",
+			expectedOutput: "52.216.160.0/23\n54.240.224.0/21\n",
+		},
+		{
+			name: "IPv6 - Verbosity Mini",
+			IPranges: []IPPrefix{
+				IPv6Prefix{IPv6Address: "2600:1f18:400:d000::/56", Region: "us-east-1", Service: "EC2", NetworkBorderGroup: "us-east-1"},
+			},
+			verbosity:      "mini",
+			expectedOutput: "2600:1f18:400:d000::/56,us-east-1,EC2,us-east-1\n",
+		},
+		{
+			name: "Mixed IPv4/IPv6 - Verbosity Full",
+			IPranges: []IPPrefix{
+				IPv4Prefix{IPAddress: "3.5.140.0/22", Region: "us-east-1", Service: "AMAZON", NetworkBorderGroup: "us-east-1"},
+				IPv6Prefix{IPv6Address: "2600:1f18:480:d000::/56", Region: "us-west-2", Service: "ROUTE53", NetworkBorderGroup: "us-west-2"},
+			},
+			verbosity:      "full",
+			expectedOutput: "IP Prefix: 3.5.140.0/22, Region: us-east-1, Service: AMAZON, Network Border Group: us-east-1\nIP Prefix: 2600:1f18:480:d000::/56, Region: us-west-2, Service: ROUTE53, Network Border Group: us-west-2\n",
+		},
+		{
+			name: "Invalid Verbosity - Defaults to None",
+			IPranges: []IPPrefix{
+				IPv4Prefix{IPAddress: "15.181.152.0/22", Region: "eu-west-1", Service: "CLOUDFRONT", NetworkBorderGroup: "eu-west-1"},
+			},
+			verbosity:      "invalid",
+			expectedOutput: "15.181.152.0/22\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			oldStdout := os.Stdout
+			r, w, _ := os.Pipe()
+			os.Stdout = w
+
+			printIPRanges(tc.IPranges, tc.verbosity)
+
+			w.Close()
+			os.Stdout = oldStdout
+
+			var buf bytes.Buffer
+			io.Copy(&buf, r)
+			output := buf.String()
+
+			assert.Equal(t, tc.expectedOutput, output, "Output mismatch for test case: %s", tc.name)
 		})
 	}
 }
