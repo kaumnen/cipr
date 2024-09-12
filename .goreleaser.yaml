@@ -9,7 +9,6 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-      - windows
       - darwin
     goarch:
       - amd64
@@ -39,7 +38,7 @@ brews:
 archives:
   - format: tar.gz
     name_template: >-
-      {{ .ProjectName }}_{{ .Version }}_{{ .Timestamp }}_
+      {{ .ProjectName }}_{{ .Version }}
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
