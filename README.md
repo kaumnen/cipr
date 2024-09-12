@@ -1,7 +1,7 @@
 # cipr - Cloud IP Range Retrieval Tool
 
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/kaumnen/cipr)
-![GitHub](https://img.shields.io/github/license/kaumnen/cipr)
+![GitHub License](https://img.shields.io/github/license/kaumnen/cipr)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/kaumnen/cipr/releaser.yml)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kaumnen/cipr)
 
