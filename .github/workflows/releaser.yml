@@ -22,8 +22,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: stable
-      - name: Set Release Timestamp
-        run: echo "RELEASE_TIMESTAMP=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
