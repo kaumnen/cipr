@@ -39,10 +39,10 @@ var awsCmd = &cobra.Command{
 		}
 
 		if awsIPv4Flag || (!awsIPv4Flag && !awsIPv6Flag) {
-			aws.GetIPRanges("ipv4", awsIPFilter, awsVerbosityFlag, utils.GetReq)
+			aws.GetIPRanges("ipv4", awsIPFilter, awsVerbosityFlag)
 		}
 		if awsIPv6Flag || (!awsIPv4Flag && !awsIPv6Flag) {
-			aws.GetIPRanges("ipv6", awsIPFilter, awsVerbosityFlag, utils.GetReq)
+			aws.GetIPRanges("ipv6", awsIPFilter, awsVerbosityFlag)
 		}
 	},
 }

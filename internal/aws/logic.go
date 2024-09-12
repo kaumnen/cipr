@@ -46,8 +46,8 @@ func (p IPv6Prefix) GetRegion() string             { return p.Region }
 func (p IPv6Prefix) GetService() string            { return p.Service }
 func (p IPv6Prefix) GetNetworkBorderGroup() string { return p.NetworkBorderGroup }
 
-func GetIPRanges(ipType, filter, verbosity string, getReqFunc func(string) string) {
-	raw_data := getReqFunc("https://ip-ranges.amazonaws.com/ip-ranges.json")
+func GetIPRanges(ipType, filter, verbosity string) {
+	raw_data := utils.GetRawData("https://ip-ranges.amazonaws.com/ip-ranges.json")
 
 	filterValues := separateFilters(filter)
 
