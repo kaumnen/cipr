@@ -23,9 +23,7 @@ builds:
       - v3
 
 universal_binaries:
-  - name_template: "{{.ProjectName}}_{{.Version}}"
-    mod_timestamp: "{{ .CommitTimestamp }}"
-    replace: true
+  - replace: true
 
 release:
   github:
