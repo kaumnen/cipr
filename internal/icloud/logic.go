@@ -15,9 +15,9 @@ type IPRange struct {
 	City    string
 }
 
-func GetIPRanges(ipType string) {
+func GetIPRanges(ipType, filterCountry, filterState, filterCity string) {
 	ip_ranges_data := loadData()
-	readyIPs := filtrateIPRanges(ip_ranges_data, ipType)
+	readyIPs := filtrateIPRanges(ip_ranges_data, ipType, filterCountry, filterState, filterCity)
 	fmt.Println(readyIPs)
 }
 
@@ -46,15 +46,16 @@ func loadData() []IPRange {
 	return ipRanges
 }
 
-func filtrateIPRanges(ipRanges []IPRange, ipType string) []IPRange {
+func filtrateIPRanges(ipRanges []IPRange, ipType, filterCountry, filterState, filterCity string) []IPRange {
 	var readyIPs []IPRange
 
 	for _, ipRange := range ipRanges {
-		if ipType == "ipv4" && strings.Contains(ipRange.IPRange, ".") {
-			readyIPs = append(readyIPs, ipRange)
-		}
-		if ipType == "ipv6" && strings.Contains(ipRange.IPRange, ":") {
-			readyIPs = append(readyIPs, ipRange)
+		if (ipType == "ipv4" && strings.Contains(ipRange.IPRange, ".")) || (ipType == "ipv6" && strings.Contains(ipRange.IPRange, ":")) {
+			if (filterCountry == "" || strings.EqualFold(ipRange.Country, filterCountry)) &&
+				(filterState == "" || strings.EqualFold(ipRange.State, filterState)) &&
+				(filterCity == "" || strings.EqualFold(ipRange.City, filterCity)) {
+				readyIPs = append(readyIPs, ipRange)
+			}
 		}
 	}
 	return readyIPs
