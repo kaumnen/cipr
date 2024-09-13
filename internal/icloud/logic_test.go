@@ -1,4 +1,3 @@
-// internal/icloud/filtrate_ip_ranges_test.go
 package icloud
 
 import (
@@ -34,19 +33,19 @@ func TestFiltrateIPRanges(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name          string
-		ipType        string
-		filterCountry string
-		filterState   string
-		filterCity    string
-		expected      []IPRange
+		name            string
+		ipType          string
+		filterCountries []string
+		filterStates    []string
+		filterCities    []string
+		expected        []IPRange
 	}{
 		{
-			name:          "IPv6 US-NY-New York",
-			ipType:        "ipv6",
-			filterCountry: "US",
-			filterState:   "US-NY",
-			filterCity:    "New York",
+			name:            "IPv6 US-NY-New York",
+			ipType:          "ipv6",
+			filterCountries: []string{"US"},
+			filterStates:    []string{"US-NY"},
+			filterCities:    []string{"New York"},
 			expected: []IPRange{
 				{"2a02:26f7:f6f9:800::/54", "US", "US-NY", "New York"},
 				{"2a02:26f7:f6f9:a06a::/64", "US", "US-NY", "New York"},
@@ -58,11 +57,11 @@ func TestFiltrateIPRanges(t *testing.T) {
 			},
 		},
 		{
-			name:          "IPv4 DE-BE-Berlin",
-			ipType:        "ipv4",
-			filterCountry: "DE",
-			filterState:   "DE-BE",
-			filterCity:    "Berlin",
+			name:            "IPv4 DE-BE-Berlin",
+			ipType:          "ipv4",
+			filterCountries: []string{"DE"},
+			filterStates:    []string{"DE-BE"},
+			filterCities:    []string{"Berlin"},
 			expected: []IPRange{
 				{"104.28.129.23/32", "DE", "DE-BE", "Berlin"},
 				{"104.28.129.24/32", "DE", "DE-BE", "Berlin"},
@@ -76,11 +75,11 @@ func TestFiltrateIPRanges(t *testing.T) {
 			},
 		},
 		{
-			name:          "All IP types in Tokyo",
-			ipType:        "ipv4",
-			filterCountry: "",
-			filterState:   "",
-			filterCity:    "Tokyo",
+			name:            "All IP types in Tokyo",
+			ipType:          "ipv4",
+			filterCountries: []string{},
+			filterStates:    []string{},
+			filterCities:    []string{"Tokyo"},
 			expected: []IPRange{
 				{"172.224.240.128/27", "JP", "JP-13", "Tokyo"},
 				{"172.225.46.64/26", "JP", "JP-13", "Tokyo"},
@@ -88,11 +87,11 @@ func TestFiltrateIPRanges(t *testing.T) {
 			},
 		},
 		{
-			name:          "IPv4 DE-BE without city filter",
-			ipType:        "ipv4",
-			filterCountry: "DE",
-			filterState:   "DE-BE",
-			filterCity:    "",
+			name:            "IPv4 DE-BE without city filter",
+			ipType:          "ipv4",
+			filterCountries: []string{"DE"},
+			filterStates:    []string{"DE-BE"},
+			filterCities:    []string{},
 			expected: []IPRange{
 				{"104.28.129.23/32", "DE", "DE-BE", "Berlin"},
 				{"104.28.129.24/32", "DE", "DE-BE", "Berlin"},
@@ -106,11 +105,11 @@ func TestFiltrateIPRanges(t *testing.T) {
 			},
 		},
 		{
-			name:          "IPv6 US without state and city filter",
-			ipType:        "ipv6",
-			filterCountry: "US",
-			filterState:   "",
-			filterCity:    "",
+			name:            "IPv6 US without state and city filter",
+			ipType:          "ipv6",
+			filterCountries: []string{"US"},
+			filterStates:    []string{},
+			filterCities:    []string{},
 			expected: []IPRange{
 				{"2a02:26f7:f6f9:800::/54", "US", "US-NY", "New York"},
 				{"2a02:26f7:f6f9:a06a::/64", "US", "US-NY", "New York"},
@@ -122,11 +121,11 @@ func TestFiltrateIPRanges(t *testing.T) {
 			},
 		},
 		{
-			name:          "No filters",
-			ipType:        "ipv6",
-			filterCountry: "",
-			filterState:   "",
-			filterCity:    "",
+			name:            "No filters",
+			ipType:          "ipv6",
+			filterCountries: []string{},
+			filterStates:    []string{},
+			filterCities:    []string{},
 			expected: []IPRange{
 				{"2a02:26f7:f6f9:800::/54", "US", "US-NY", "New York"},
 				{"2a02:26f7:f6f9:a06a::/64", "US", "US-NY", "New York"},
@@ -141,12 +140,33 @@ func TestFiltrateIPRanges(t *testing.T) {
 			},
 		},
 		{
-			name:          "City Filter Tokyo",
-			ipType:        "ipv4",
-			filterCountry: "",
-			filterState:   "",
-			filterCity:    "Tokyo",
+			name:            "City Filter Tokyo",
+			ipType:          "ipv4",
+			filterCountries: []string{},
+			filterStates:    []string{},
+			filterCities:    []string{"Tokyo"},
 			expected: []IPRange{
+				{"172.224.240.128/27", "JP", "JP-13", "Tokyo"},
+				{"172.225.46.64/26", "JP", "JP-13", "Tokyo"},
+				{"172.225.46.208/28", "JP", "JP-13", "Tokyo"},
+			},
+		},
+		{
+			name:            "Multiple Countries and Cities",
+			ipType:          "ipv4",
+			filterCountries: []string{"US", "DE", "JP"},
+			filterStates:    []string{"US-NY", "DE-BE", "JP-13"},
+			filterCities:    []string{"New York", "Berlin", "Tokyo"},
+			expected: []IPRange{
+				{"104.28.129.23/32", "DE", "DE-BE", "Berlin"},
+				{"104.28.129.24/32", "DE", "DE-BE", "Berlin"},
+				{"104.28.129.25/32", "DE", "DE-BE", "Berlin"},
+				{"104.28.129.26/32", "DE", "DE-BE", "Berlin"},
+				{"140.248.17.50/31", "DE", "DE-BE", "Berlin"},
+				{"140.248.34.44/31", "DE", "DE-BE", "Berlin"},
+				{"140.248.36.56/31", "DE", "DE-BE", "Berlin"},
+				{"146.75.166.14/31", "DE", "DE-BE", "Berlin"},
+				{"146.75.169.44/31", "DE", "DE-BE", "Berlin"},
 				{"172.224.240.128/27", "JP", "JP-13", "Tokyo"},
 				{"172.225.46.64/26", "JP", "JP-13", "Tokyo"},
 				{"172.225.46.208/28", "JP", "JP-13", "Tokyo"},
@@ -157,7 +177,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			result := filtrateIPRanges(ipRanges, tc.ipType, tc.filterCountry, tc.filterState, tc.filterCity)
+			result := filtrateIPRanges(ipRanges, tc.ipType, tc.filterCountries, tc.filterStates, tc.filterCities)
 			assert.Equal(t, tc.expected, result, "Test case '%s' failed", tc.name)
 		})
 	}
