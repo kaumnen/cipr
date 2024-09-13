@@ -15,10 +15,10 @@ type IPRange struct {
 	City    string
 }
 
-func GetIPRanges(ipType string, filterCountry, filterState, filterCity []string) {
+func GetIPRanges(ipType string, filterCountry, filterState, filterCity []string, verbosity string) {
 	ip_ranges_data := loadData()
 	readyIPs := filtrateIPRanges(ip_ranges_data, ipType, filterCountry, filterState, filterCity)
-	fmt.Println(readyIPs)
+	printIPRanges(readyIPs, verbosity)
 }
 
 func loadData() []IPRange {
@@ -68,4 +68,38 @@ func containsIgnoreCase(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+func printIPRanges(IPranges []IPRange, verbosity string) {
+	if len(IPranges) == 0 {
+		fmt.Println("No IP ranges to display.")
+		return
+	}
+
+	var printFunc func(IPRange)
+
+	switch verbosity {
+	case "none":
+		printFunc = func(ip IPRange) {
+			fmt.Println(ip.IPRange)
+		}
+	case "mini":
+		printFunc = func(ip IPRange) {
+			fmt.Printf("%s,%s,%s,%s\n",
+				ip.IPRange, ip.Country, ip.State, ip.City)
+		}
+	case "full":
+		printFunc = func(ip IPRange) {
+			fmt.Printf("IP Range: %s, Country: %s, State: %s, City: %s\n",
+				ip.IPRange, ip.Country, ip.State, ip.City)
+		}
+	default:
+		printFunc = func(ip IPRange) {
+			fmt.Println(ip.IPRange)
+		}
+	}
+
+	for _, ip := range IPranges {
+		printFunc(ip)
+	}
 }
