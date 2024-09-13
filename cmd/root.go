@@ -12,7 +12,7 @@ var cfgFile string
 
 var rootCmd = &cobra.Command{
 	Use:     "cipr",
-	Version: "v0.0.0-dev",
+	Version: "v0.3.9",
 	Short:   "",
 	Long:    ``,
 }
