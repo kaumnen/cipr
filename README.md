@@ -22,7 +22,7 @@ brew install cipr
 > [!NOTE]  
 > Currently available for Linux and MacOS systems.
 > 
-> Documentation available here: [docs.cipr.sh](https://docs.cipr.sh)
+> Documentation available at: [docs.cipr.sh](https://docs.cipr.sh)
 
 ## Contributing
 
