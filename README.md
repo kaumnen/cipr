@@ -7,9 +7,6 @@
 
 cipr is a command-line interface (CLI) tool designed to simplify the process of retrieving IP ranges from various cloud providers and services. It provides a quick and efficient way to access up-to-date IP ranges, which can be particularly useful for network administrators, security professionals, and developers working with cloud infrastructure.
 
-> [!TIP]
-> **If you like the tool, feel free to star it!**
-
 ## Installation
 
 To install cipr, you can use homebrew:
