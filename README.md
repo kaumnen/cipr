@@ -28,6 +28,8 @@ to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
 
+More info available here - [CONTRIBUTING.md](https://github.com/kaumnen/cipr/blob/main/CONTRIBUTING.md)
+
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
