@@ -10,10 +10,9 @@ import (
 )
 
 var (
-	awsIPv4Flag      bool
-	awsIPv6Flag      bool
-	awsIPFilterFlag  string
-	awsVerbosityFlag string
+	awsIPv4Flag     bool
+	awsIPv6Flag     bool
+	awsIPFilterFlag string
 
 	awsFilterRegionFlag             string
 	awsFilterServiceFlag            string
@@ -26,6 +25,9 @@ var awsCmd = &cobra.Command{
 	Long:  `Get AWS IPv4 and IPv6 ranges.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := utils.GetCiprLogger()
+
+		verbosity, _ := cmd.Flags().GetString("verbose")
+
 		var awsIPFilter string
 
 		if awsIPFilterFlag != "" && (awsFilterRegionFlag != "" || awsFilterServiceFlag != "" || awsFilterNetworkBorderGroupFlag != "") {
@@ -39,10 +41,10 @@ var awsCmd = &cobra.Command{
 		}
 
 		if awsIPv4Flag || (!awsIPv4Flag && !awsIPv6Flag) {
-			aws.GetIPRanges("ipv4", awsIPFilter, awsVerbosityFlag)
+			aws.GetIPRanges("ipv4", awsIPFilter, verbosity)
 		}
 		if awsIPv6Flag || (!awsIPv4Flag && !awsIPv6Flag) {
-			aws.GetIPRanges("ipv6", awsIPFilter, awsVerbosityFlag)
+			aws.GetIPRanges("ipv6", awsIPFilter, verbosity)
 		}
 	},
 }
@@ -53,7 +55,6 @@ func init() {
 	awsCmd.Flags().BoolVar(&awsIPv4Flag, "ipv4", false, "Get only IPv4 ranges")
 	awsCmd.Flags().BoolVar(&awsIPv6Flag, "ipv6", false, "Get only IPv6 ranges")
 	awsCmd.Flags().StringVar(&awsIPFilterFlag, "filter", "", "Filter results. Syntax: aws-region-az,SERVICE,network-border-group")
-	awsCmd.Flags().StringVar(&awsVerbosityFlag, "verbose", "none", "Verbosity. Options: none, mini, full")
 
 	awsCmd.Flags().StringVar(&awsFilterRegionFlag, "filter-region", "", "Filter results by AWS region")
 	awsCmd.Flags().StringVar(&awsFilterServiceFlag, "filter-service", "", "Filter results by AWS service")

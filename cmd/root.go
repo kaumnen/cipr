@@ -8,7 +8,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+var (
+	cfgFile     string
+	verboseFlag string
+)
 
 var rootCmd = &cobra.Command{
 	Use:     "cipr",
@@ -28,8 +31,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cipr.yaml)")
-
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().StringVarP(&verboseFlag, "verbose", "v", "none", "Verbosity level: none, mini, full. Default is none.")
 }
 
 func initConfig() {
