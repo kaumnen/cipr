@@ -11,7 +11,7 @@ import (
 var (
 	cfgFile     string
 	verboseFlag string
-	version     string
+	version     = "dev"
 )
 
 var rootCmd = &cobra.Command{
