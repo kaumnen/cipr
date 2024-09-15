@@ -23,7 +23,7 @@ All types of contributions are encouraged and valued. See the [Table of Contents
 ## Code of Conduct
 
 This project and everyone participating in it is governed by the
-[cipr Code of Conduct](https://github.com/kaumnen/ciprblob/master/CODE_OF_CONDUCT.md).
+[cipr Code of Conduct](https://github.com/kaumnen/cipr/blob/main/CODE_OF_CONDUCT.md).
 By participating, you are expected to uphold this code. Please report unacceptable behavior
 to contact (at) cipr.sh.
 
