@@ -32,7 +32,9 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cipr.yaml)")
+
 	rootCmd.PersistentFlags().StringVarP(&verboseFlag, "verbose", "v", "none", "Verbosity level: none, mini, full. Default is none.")
+	rootCmd.PersistentFlags().Lookup("verbose").NoOptDefVal = "full"
 }
 
 func initConfig() {
