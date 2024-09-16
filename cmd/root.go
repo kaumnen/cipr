@@ -11,11 +11,12 @@ import (
 var (
 	cfgFile     string
 	verboseFlag string
+	version     = "dev"
 )
 
 var rootCmd = &cobra.Command{
 	Use:     "cipr",
-	Version: "v0.3.10",
+	Version: version,
 	Short:   "",
 	Long:    ``,
 }
