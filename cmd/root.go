@@ -9,9 +9,8 @@ import (
 )
 
 var (
-	cfgFile     string
-	verboseFlag string
-	version     = "dev"
+	cfgFile string
+	version = "dev"
 )
 
 var rootCmd = &cobra.Command{
@@ -31,8 +30,13 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cipr.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&verboseFlag, "verbose", "v", "none", "Verbosity level: none, mini, full. Default is none.")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "Config file (default is $HOME/.cipr.yaml)")
+
+	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output (equivalent to --verbose-mode=full)")
+	rootCmd.PersistentFlags().String("verbose-mode", "none", "Verbosity level: none, mini, full. Overrides --verbose")
+
+	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
+	viper.BindPFlag("verbose_mode", rootCmd.PersistentFlags().Lookup("verbose-mode"))
 }
 
 func initConfig() {

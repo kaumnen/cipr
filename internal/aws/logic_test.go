@@ -60,7 +60,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 			},
 		},
 		{
-			name:        "ipv6 - filters: us-east-1 region, EBS service, us-east-1 network border group",
+			name:        "ipv6 - filters: eu-central-1 region, S3 service, eu-central-1 network border group",
 			ipType:      "ipv6",
 			filterSlice: []string{"eu-central-1", "S3", "eu-central-1"},
 			expected: []IPPrefix{
