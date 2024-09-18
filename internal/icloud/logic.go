@@ -11,13 +11,13 @@ import (
 type IPRange struct {
 	IPRange string
 	Country string
-	State   string
+	Region  string
 	City    string
 }
 
-func GetIPRanges(ipType string, filterCountry, filterState, filterCity []string, verbosity string) {
+func GetIPRanges(ipType string, filterCountry, filterRegion, filterCity []string, verbosity string) {
 	ip_ranges_data := loadData()
-	readyIPs := filtrateIPRanges(ip_ranges_data, ipType, filterCountry, filterState, filterCity)
+	readyIPs := filtrateIPRanges(ip_ranges_data, ipType, filterCountry, filterRegion, filterCity)
 	printIPRanges(readyIPs, verbosity)
 }
 
@@ -38,7 +38,7 @@ func loadData() []IPRange {
 		ipRange := IPRange{
 			IPRange: record[0],
 			Country: record[1],
-			State:   record[2],
+			Region:  record[2],
 			City:    record[3],
 		}
 		ipRanges = append(ipRanges, ipRange)
@@ -46,13 +46,13 @@ func loadData() []IPRange {
 	return ipRanges
 }
 
-func filtrateIPRanges(ipRanges []IPRange, ipType string, filterCountries, filterStates, filterCities []string) []IPRange {
+func filtrateIPRanges(ipRanges []IPRange, ipType string, filterCountries, filterRegions, filterCities []string) []IPRange {
 	var readyIPs []IPRange
 
 	for _, ipRange := range ipRanges {
 		if (ipType == "ipv4" && strings.Contains(ipRange.IPRange, ".")) || (ipType == "ipv6" && strings.Contains(ipRange.IPRange, ":")) {
 			if (len(filterCountries) == 0 || containsIgnoreCase(filterCountries, ipRange.Country)) &&
-				(len(filterStates) == 0 || containsIgnoreCase(filterStates, ipRange.State)) &&
+				(len(filterRegions) == 0 || containsIgnoreCase(filterRegions, ipRange.Region)) &&
 				(len(filterCities) == 0 || containsIgnoreCase(filterCities, ipRange.City)) {
 				readyIPs = append(readyIPs, ipRange)
 			}
@@ -86,12 +86,12 @@ func printIPRanges(IPranges []IPRange, verbosity string) {
 	case "mini":
 		printFunc = func(ip IPRange) {
 			fmt.Printf("%s,%s,%s,%s\n",
-				ip.IPRange, ip.Country, ip.State, ip.City)
+				ip.IPRange, ip.Country, ip.Region, ip.City)
 		}
 	case "full":
 		printFunc = func(ip IPRange) {
-			fmt.Printf("IP Range: %s, Country: %s, State: %s, City: %s\n",
-				ip.IPRange, ip.Country, ip.State, ip.City)
+			fmt.Printf("IP Range: %s, Country: %s, Region: %s, City: %s\n",
+				ip.IPRange, ip.Country, ip.Region, ip.City)
 		}
 	default:
 		printFunc = func(ip IPRange) {

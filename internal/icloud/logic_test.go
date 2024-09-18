@@ -36,7 +36,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 		name            string
 		ipType          string
 		filterCountries []string
-		filterStates    []string
+		filterRegions   []string
 		filterCities    []string
 		expected        []IPRange
 	}{
@@ -44,7 +44,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 			name:            "IPv6 US-NY-New York",
 			ipType:          "ipv6",
 			filterCountries: []string{"US"},
-			filterStates:    []string{"US-NY"},
+			filterRegions:   []string{"US-NY"},
 			filterCities:    []string{"New York"},
 			expected: []IPRange{
 				{"2a02:26f7:f6f9:800::/54", "US", "US-NY", "New York"},
@@ -60,7 +60,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 			name:            "IPv4 DE-BE-Berlin",
 			ipType:          "ipv4",
 			filterCountries: []string{"DE"},
-			filterStates:    []string{"DE-BE"},
+			filterRegions:   []string{"DE-BE"},
 			filterCities:    []string{"Berlin"},
 			expected: []IPRange{
 				{"104.28.129.23/32", "DE", "DE-BE", "Berlin"},
@@ -78,7 +78,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 			name:            "All IP types in Tokyo",
 			ipType:          "ipv4",
 			filterCountries: []string{},
-			filterStates:    []string{},
+			filterRegions:   []string{},
 			filterCities:    []string{"Tokyo"},
 			expected: []IPRange{
 				{"172.224.240.128/27", "JP", "JP-13", "Tokyo"},
@@ -90,7 +90,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 			name:            "IPv4 DE-BE without city filter",
 			ipType:          "ipv4",
 			filterCountries: []string{"DE"},
-			filterStates:    []string{"DE-BE"},
+			filterRegions:   []string{"DE-BE"},
 			filterCities:    []string{},
 			expected: []IPRange{
 				{"104.28.129.23/32", "DE", "DE-BE", "Berlin"},
@@ -105,10 +105,10 @@ func TestFiltrateIPRanges(t *testing.T) {
 			},
 		},
 		{
-			name:            "IPv6 US without state and city filter",
+			name:            "IPv6 US without Region and city filter",
 			ipType:          "ipv6",
 			filterCountries: []string{"US"},
-			filterStates:    []string{},
+			filterRegions:   []string{},
 			filterCities:    []string{},
 			expected: []IPRange{
 				{"2a02:26f7:f6f9:800::/54", "US", "US-NY", "New York"},
@@ -124,7 +124,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 			name:            "No filters",
 			ipType:          "ipv6",
 			filterCountries: []string{},
-			filterStates:    []string{},
+			filterRegions:   []string{},
 			filterCities:    []string{},
 			expected: []IPRange{
 				{"2a02:26f7:f6f9:800::/54", "US", "US-NY", "New York"},
@@ -143,7 +143,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 			name:            "City Filter Tokyo",
 			ipType:          "ipv4",
 			filterCountries: []string{},
-			filterStates:    []string{},
+			filterRegions:   []string{},
 			filterCities:    []string{"Tokyo"},
 			expected: []IPRange{
 				{"172.224.240.128/27", "JP", "JP-13", "Tokyo"},
@@ -155,7 +155,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 			name:            "Multiple Countries and Cities",
 			ipType:          "ipv4",
 			filterCountries: []string{"US", "DE", "JP"},
-			filterStates:    []string{"US-NY", "DE-BE", "JP-13"},
+			filterRegions:   []string{"US-NY", "DE-BE", "JP-13"},
 			filterCities:    []string{"New York", "Berlin", "Tokyo"},
 			expected: []IPRange{
 				{"104.28.129.23/32", "DE", "DE-BE", "Berlin"},
@@ -177,7 +177,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			result := filtrateIPRanges(ipRanges, tc.ipType, tc.filterCountries, tc.filterStates, tc.filterCities)
+			result := filtrateIPRanges(ipRanges, tc.ipType, tc.filterCountries, tc.filterRegions, tc.filterCities)
 			assert.Equal(t, tc.expected, result, "Test case '%s' failed", tc.name)
 		})
 	}
