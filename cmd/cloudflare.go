@@ -1,30 +1,47 @@
 package cmd
 
 import (
-	"github.com/kaumnen/cipr/internal/cloudflare"
-	"github.com/kaumnen/cipr/internal/utils"
-	"github.com/spf13/cobra"
-)
+	"fmt"
+	"os"
 
-var (
-	cloudflareIPv4Flag bool
-	cloudflareIPv6Flag bool
+	"github.com/kaumnen/cipr/internal/cloudflare"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var cloudflareCmd = &cobra.Command{
 	Use:   "cloudflare",
 	Short: "Get Cloudflare IP ranges",
-	Long:  `Get Cloudflare IPv4 and IPv6 ranges.`,
+	Long:  `Retrieve Cloudflare IPv4 and IPv6 ranges with optional verbosity levels.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := utils.GetCiprLogger()
-
-		logger.Println("cloudflare called")
-
-		if cloudflareIPv4Flag || (!cloudflareIPv4Flag && !cloudflareIPv6Flag) {
-			cloudflare.GetCloudflareIPv4Ranges()
+		var verbosity string
+		if cmd.Flags().Changed("verbose-mode") {
+			verbosity = viper.GetString("verbose_mode")
+		} else if viper.GetBool("verbose") {
+			verbosity = "full"
+		} else {
+			verbosity = "none"
 		}
-		if cloudflareIPv6Flag || (!cloudflareIPv4Flag && !cloudflareIPv6Flag) {
-			cloudflare.GetCloudflareIPv6Ranges()
+
+		if !isValidVerbosity(verbosity) {
+			fmt.Fprintf(os.Stderr, "Invalid verbosity level: %s. Allowed values are: none, mini, full.\n", verbosity)
+			os.Exit(1)
+		}
+
+		ipVersions := []string{}
+		if viper.GetBool("cloudflare_ipv4") || (!viper.GetBool("cloudflare_ipv4") && !viper.GetBool("cloudflare_ipv6")) {
+			ipVersions = append(ipVersions, "ipv4")
+		}
+		if viper.GetBool("cloudflare_ipv6") || (!viper.GetBool("cloudflare_ipv4") && !viper.GetBool("cloudflare_ipv6")) {
+			ipVersions = append(ipVersions, "ipv6")
+		}
+
+		for _, version := range ipVersions {
+			config := cloudflare.Config{
+				IPType:    version,
+				Verbosity: verbosity,
+			}
+			cloudflare.GetCloudflareIPRanges(config)
 		}
 	},
 }
@@ -32,6 +49,9 @@ var cloudflareCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(cloudflareCmd)
 
-	cloudflareCmd.Flags().BoolVar(&cloudflareIPv4Flag, "ipv4", false, "Get only IPv4 ranges")
-	cloudflareCmd.Flags().BoolVar(&cloudflareIPv6Flag, "ipv6", false, "Get only IPv6 ranges")
+	cloudflareCmd.Flags().Bool("ipv4", false, "Get only IPv4 ranges")
+	cloudflareCmd.Flags().Bool("ipv6", false, "Get only IPv6 ranges")
+
+	viper.BindPFlag("cloudflare_ipv4", cloudflareCmd.Flags().Lookup("ipv4"))
+	viper.BindPFlag("cloudflare_ipv6", cloudflareCmd.Flags().Lookup("ipv6"))
 }
