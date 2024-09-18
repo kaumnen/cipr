@@ -46,14 +46,20 @@ func (p IPv6Prefix) GetRegion() string             { return p.Region }
 func (p IPv6Prefix) GetService() string            { return p.Service }
 func (p IPv6Prefix) GetNetworkBorderGroup() string { return p.NetworkBorderGroup }
 
-func GetIPRanges(ipType, filter, verbosity string) {
-	raw_data := utils.GetRawData("https://ip-ranges.amazonaws.com/ip-ranges.json")
+type Config struct {
+	IPType    string
+	Filter    string
+	Verbosity string
+}
 
-	filterValues := separateFilters(filter)
+func GetIPRanges(config Config) {
+	rawData := utils.GetRawData("https://ip-ranges.amazonaws.com/ip-ranges.json")
 
-	readyIPs := filtrateIPRanges(raw_data, ipType, filterValues)
+	filterSlice := separateFilters(config.Filter)
 
-	printIPRanges(readyIPs, verbosity)
+	readyIPs := filtrateIPRanges(rawData, config.IPType, filterSlice)
+
+	printIPRanges(readyIPs, config.Verbosity)
 }
 
 func separateFilters(filterFlagValues string) []string {
@@ -91,7 +97,7 @@ func filtrateIPRanges(rawData, ipType string, filterSlice []string) []IPPrefix {
 	}
 
 	var prefixes []IPPrefix
-	result := []IPPrefix{}
+	var result []IPPrefix
 
 	if ipType == "ipv4" {
 		for _, prefix := range data.Prefixes {
@@ -110,7 +116,7 @@ func filtrateIPRanges(rawData, ipType string, filterSlice []string) []IPPrefix {
 	}
 
 	if len(result) == 0 {
-		fmt.Println("Nothing found!")
+		fmt.Println("No IP ranges to display.")
 		return nil
 	}
 
@@ -123,8 +129,8 @@ func matchesFilter(prefix IPPrefix, filterSlice []string) bool {
 		(filterSlice[2] == "*" || strings.EqualFold(prefix.GetNetworkBorderGroup(), filterSlice[2]))
 }
 
-func printIPRanges(IPranges []IPPrefix, verbosity string) {
-	if len(IPranges) == 0 {
+func printIPRanges(ipRanges []IPPrefix, verbosity string) {
+	if len(ipRanges) == 0 {
 		fmt.Println("No IP ranges to display.")
 		return
 	}
@@ -152,7 +158,7 @@ func printIPRanges(IPranges []IPPrefix, verbosity string) {
 		}
 	}
 
-	for _, ip := range IPranges {
+	for _, ip := range ipRanges {
 		printFunc(ip)
 	}
 }
