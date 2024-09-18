@@ -15,15 +15,27 @@ type IPRange struct {
 	City    string
 }
 
-func GetIPRanges(ipType string, filterCountry, filterRegion, filterCity []string, verbosity string) {
-	ip_ranges_data := loadData()
-	readyIPs := filtrateIPRanges(ip_ranges_data, ipType, filterCountry, filterRegion, filterCity)
-	printIPRanges(readyIPs, verbosity)
+type Filters struct {
+	Country []string
+	Region  []string
+	City    []string
+}
+
+type Config struct {
+	IPType    string
+	Filters   Filters
+	Verbosity string
+}
+
+func GetIPRanges(config Config) {
+	ipRangesData := loadData()
+	readyIPs := filtrateIPRanges(ipRangesData, config)
+	printIPRanges(readyIPs, config.Verbosity)
 }
 
 func loadData() []IPRange {
-	raw_data := utils.GetRawData("https://mask-api.icloud.com/egress-ip-ranges.csv")
-	r := csv.NewReader(strings.NewReader(raw_data))
+	rawData := utils.GetRawData("https://mask-api.icloud.com/egress-ip-ranges.csv")
+	r := csv.NewReader(strings.NewReader(rawData))
 	records, err := r.ReadAll()
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -46,14 +58,17 @@ func loadData() []IPRange {
 	return ipRanges
 }
 
-func filtrateIPRanges(ipRanges []IPRange, ipType string, filterCountries, filterRegions, filterCities []string) []IPRange {
+func filtrateIPRanges(ipRanges []IPRange, config Config) []IPRange {
 	var readyIPs []IPRange
 
 	for _, ipRange := range ipRanges {
-		if (ipType == "ipv4" && strings.Contains(ipRange.IPRange, ".")) || (ipType == "ipv6" && strings.Contains(ipRange.IPRange, ":")) {
-			if (len(filterCountries) == 0 || containsIgnoreCase(filterCountries, ipRange.Country)) &&
-				(len(filterRegions) == 0 || containsIgnoreCase(filterRegions, ipRange.Region)) &&
-				(len(filterCities) == 0 || containsIgnoreCase(filterCities, ipRange.City)) {
+		if (config.IPType == "ipv4" && strings.Contains(ipRange.IPRange, ".")) ||
+			(config.IPType == "ipv6" && strings.Contains(ipRange.IPRange, ":")) ||
+			(config.IPType == "both" && (strings.Contains(ipRange.IPRange, ".") || strings.Contains(ipRange.IPRange, ":"))) {
+
+			if (len(config.Filters.Country) == 0 || containsIgnoreCase(config.Filters.Country, ipRange.Country)) &&
+				(len(config.Filters.Region) == 0 || containsIgnoreCase(config.Filters.Region, ipRange.Region)) &&
+				(len(config.Filters.City) == 0 || containsIgnoreCase(config.Filters.City, ipRange.City)) {
 				readyIPs = append(readyIPs, ipRange)
 			}
 		}
@@ -70,8 +85,8 @@ func containsIgnoreCase(slice []string, item string) bool {
 	return false
 }
 
-func printIPRanges(IPranges []IPRange, verbosity string) {
-	if len(IPranges) == 0 {
+func printIPRanges(ipRanges []IPRange, verbosity string) {
+	if len(ipRanges) == 0 {
 		fmt.Println("No IP ranges to display.")
 		return
 	}
@@ -99,7 +114,7 @@ func printIPRanges(IPranges []IPRange, verbosity string) {
 		}
 	}
 
-	for _, ip := range IPranges {
+	for _, ip := range ipRanges {
 		printFunc(ip)
 	}
 }

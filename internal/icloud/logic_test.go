@@ -177,7 +177,18 @@ func TestFiltrateIPRanges(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			result := filtrateIPRanges(ipRanges, tc.ipType, tc.filterCountries, tc.filterRegions, tc.filterCities)
+			config := Config{
+				IPType: tc.ipType,
+				Filters: Filters{
+					Country: tc.filterCountries,
+					Region:  tc.filterRegions,
+					City:    tc.filterCities,
+				},
+				Verbosity: "none",
+			}
+
+			result := filtrateIPRanges(ipRanges, config)
+
 			assert.Equal(t, tc.expected, result, "Test case '%s' failed", tc.name)
 		})
 	}
