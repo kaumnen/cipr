@@ -77,7 +77,6 @@ func init() {
 	awsCmd.Flags().String("filter-service", "", "Filter results by AWS service")
 	awsCmd.Flags().String("filter-network-border-group", "", "Filter results by AWS network border group")
 
-	// Bind flags to Viper
 	viper.BindPFlag("ipv4", awsCmd.Flags().Lookup("ipv4"))
 	viper.BindPFlag("ipv6", awsCmd.Flags().Lookup("ipv6"))
 	viper.BindPFlag("filter", awsCmd.Flags().Lookup("filter"))
