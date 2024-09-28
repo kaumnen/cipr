@@ -104,8 +104,8 @@ func printIPRanges(ipRanges []IPRange, verbosity string) {
 		}
 	case "mini":
 		printFunc = func(ip IPRange) {
-			fmt.Printf("%s,%s,%s,%s\n",
-				ip.IPRange, ip.Country, ip.Region, ip.City)
+			fmt.Printf("%s,%s,%s,%s,%s\n",
+				ip.IPRange, ip.Country, ip.Region, ip.City, ip.Zip)
 		}
 	case "full":
 		printFunc = func(ip IPRange) {
