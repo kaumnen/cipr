@@ -40,10 +40,10 @@ var doCmd = &cobra.Command{
 			config := digitalocean.Config{
 				IPType: version,
 				Filters: digitalocean.Filters{
-					Country: viper.GetStringSlice("filter-country"),
-					Region:  viper.GetStringSlice("filter-region"),
-					City:    viper.GetStringSlice("filter-city"),
-					Zip:     viper.GetStringSlice("filter-zip"),
+					Country: viper.GetStringSlice("do-filter-country"),
+					Region:  viper.GetStringSlice("do-filter-region"),
+					City:    viper.GetStringSlice("do-filter-city"),
+					Zip:     viper.GetStringSlice("do-filter-zip"),
 				},
 				Verbosity: verbosity,
 			}
@@ -53,7 +53,6 @@ var doCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(doCmd)
 
 	doCmd.Flags().Bool("ipv4", false, "Get only IPv4 ranges")
 	doCmd.Flags().Bool("ipv6", false, "Get only IPv6 ranges")
@@ -64,8 +63,10 @@ func init() {
 
 	viper.BindPFlag("do_ipv4", doCmd.Flags().Lookup("ipv4"))
 	viper.BindPFlag("do_ipv6", doCmd.Flags().Lookup("ipv6"))
-	viper.BindPFlag("filter-country", doCmd.Flags().Lookup("filter-country"))
-	viper.BindPFlag("filter-region", doCmd.Flags().Lookup("filter-region"))
-	viper.BindPFlag("filter-city", doCmd.Flags().Lookup("filter-city"))
-	viper.BindPFlag("filter-zip", doCmd.Flags().Lookup("filter-zip"))
+	viper.BindPFlag("do-filter-country", doCmd.Flags().Lookup("filter-country"))
+	viper.BindPFlag("do-filter-region", doCmd.Flags().Lookup("filter-region"))
+	viper.BindPFlag("do-filter-city", doCmd.Flags().Lookup("filter-city"))
+	viper.BindPFlag("do-filter-zip", doCmd.Flags().Lookup("filter-zip"))
+
+	rootCmd.AddCommand(doCmd)
 }
