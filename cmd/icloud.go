@@ -40,9 +40,9 @@ var icloudCmd = &cobra.Command{
 		config := icloud.Config{
 			IPType: ipType,
 			Filters: icloud.Filters{
-				Country: viper.GetStringSlice("filter-country"),
-				Region:  viper.GetStringSlice("filter-region"),
-				City:    viper.GetStringSlice("filter-city"),
+				Country: viper.GetStringSlice("icloud-filter-country"),
+				Region:  viper.GetStringSlice("icloud-filter-region"),
+				City:    viper.GetStringSlice("icloud-filter-city"),
 			},
 			Verbosity: verbosity,
 		}
@@ -60,9 +60,9 @@ func init() {
 
 	viper.BindPFlag("ipv4", icloudCmd.Flags().Lookup("ipv4"))
 	viper.BindPFlag("ipv6", icloudCmd.Flags().Lookup("ipv6"))
-	viper.BindPFlag("filter-country", icloudCmd.Flags().Lookup("filter-country"))
-	viper.BindPFlag("filter-region", icloudCmd.Flags().Lookup("filter-region"))
-	viper.BindPFlag("filter-city", icloudCmd.Flags().Lookup("filter-city"))
+	viper.BindPFlag("icloud-filter-country", icloudCmd.Flags().Lookup("filter-country"))
+	viper.BindPFlag("icloud-filter-region", icloudCmd.Flags().Lookup("filter-region"))
+	viper.BindPFlag("icloud-filter-city", icloudCmd.Flags().Lookup("filter-city"))
 
 	rootCmd.AddCommand(icloudCmd)
 }
