@@ -36,10 +36,10 @@ var awsCmd = &cobra.Command{
 			ipVersion = append(ipVersion, "ipv6")
 		}
 
-		filter := viper.GetString("filter")
-		filterRegion := viper.GetString("filter-region")
-		filterService := viper.GetString("filter-service")
-		filterNetworkBorderGroup := viper.GetString("filter-network-border-group")
+		filter := viper.GetString("aws-filter")
+		filterRegion := viper.GetString("aws-filter-region")
+		filterService := viper.GetString("aws-filter-service")
+		filterNetworkBorderGroup := viper.GetString("aws-filter-network-border-group")
 
 		if filter != "" && (filterRegion != "" || filterService != "" || filterNetworkBorderGroup != "") {
 			fmt.Fprintln(os.Stderr, "--filter flag cannot be used with individual filter flags")
@@ -79,8 +79,8 @@ func init() {
 
 	viper.BindPFlag("ipv4", awsCmd.Flags().Lookup("ipv4"))
 	viper.BindPFlag("ipv6", awsCmd.Flags().Lookup("ipv6"))
-	viper.BindPFlag("filter", awsCmd.Flags().Lookup("filter"))
-	viper.BindPFlag("filter-region", awsCmd.Flags().Lookup("filter-region"))
-	viper.BindPFlag("filter-service", awsCmd.Flags().Lookup("filter-service"))
-	viper.BindPFlag("filter-network-border-group", awsCmd.Flags().Lookup("filter-network-border-group"))
+	viper.BindPFlag("aws-filter", awsCmd.Flags().Lookup("filter"))
+	viper.BindPFlag("aws-filter-region", awsCmd.Flags().Lookup("filter-region"))
+	viper.BindPFlag("aws-filter-service", awsCmd.Flags().Lookup("filter-service"))
+	viper.BindPFlag("aws-filter-network-border-group", awsCmd.Flags().Lookup("filter-network-border-group"))
 }
