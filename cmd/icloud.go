@@ -15,6 +15,7 @@ var icloudCmd = &cobra.Command{
 	Long:  `Get iCloud private relay IPv4 and IPv6 ranges.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var verbosity string
+
 		if cmd.Flags().Changed("verbose-mode") {
 			verbosity = viper.GetString("verbose_mode")
 		} else if viper.GetBool("verbose") {
@@ -28,12 +29,12 @@ var icloudCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		ipType := "ipv4"
-		if viper.GetBool("ipv6") {
-			ipType = "ipv6"
+		ipType := "icloud_ipv4"
+		if viper.GetBool("icloud_ipv6") {
+			ipType = "icloud_ipv6"
 		}
 
-		if !viper.GetBool("ipv4") && !viper.GetBool("ipv6") {
+		if !viper.GetBool("icloud_ipv4") && !viper.GetBool("icloud_ipv6") {
 			ipType = "both"
 		}
 
@@ -58,8 +59,8 @@ func init() {
 	icloudCmd.Flags().StringSlice("filter-region", []string{}, "Filter results by region")
 	icloudCmd.Flags().StringSlice("filter-city", []string{}, `Filter results by city (use quotes for names with spaces, e.g. "New York")`)
 
-	viper.BindPFlag("ipv4", icloudCmd.Flags().Lookup("ipv4"))
-	viper.BindPFlag("ipv6", icloudCmd.Flags().Lookup("ipv6"))
+	viper.BindPFlag("icloud_ipv4", icloudCmd.Flags().Lookup("ipv4"))
+	viper.BindPFlag("icloud_ipv6", icloudCmd.Flags().Lookup("ipv6"))
 	viper.BindPFlag("icloud-filter-country", icloudCmd.Flags().Lookup("filter-country"))
 	viper.BindPFlag("icloud-filter-region", icloudCmd.Flags().Lookup("filter-region"))
 	viper.BindPFlag("icloud-filter-city", icloudCmd.Flags().Lookup("filter-city"))
