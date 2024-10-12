@@ -24,7 +24,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 		{
 			name: "Filter by IPv4",
 			config: Config{
-				IPType: "ipv4",
+				IPType: "do_ipv4",
 			},
 			expected: []IPRange{
 				{IPRange: "192.168.1.0/24", Country: "US", Region: "California", City: "San Francisco", Zip: "94107"},
@@ -34,7 +34,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 		{
 			name: "Filter by IPv6",
 			config: Config{
-				IPType: "ipv6",
+				IPType: "do_ipv6",
 			},
 			expected: []IPRange{
 				{IPRange: "2607:f8b0:4005:805::200e", Country: "US", Region: "California", City: "Mountain View", Zip: "94043"},
@@ -188,7 +188,7 @@ func TestPrintIPRanges(t *testing.T) {
 			name:      "Verbosity mini",
 			ipRanges:  ipRanges,
 			verbosity: "mini",
-			expected:  "192.168.1.0/24,US,California,San Francisco\n2607:f8b0:4005:805::200e,US,California,Mountain View\n",
+			expected:  "192.168.1.0/24,US,California,San Francisco,94107\n2607:f8b0:4005:805::200e,US,California,Mountain View,94043\n",
 		},
 		{
 			name:      "Verbosity full",
