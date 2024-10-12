@@ -188,7 +188,7 @@ func TestPrintIPRanges(t *testing.T) {
 			name:      "Verbosity mini",
 			ipRanges:  ipRanges,
 			verbosity: "mini",
-			expected:  "192.168.1.0/24,US,California,San Francisco\n2607:f8b0:4005:805::200e,US,California,Mountain View\n",
+			expected:  "192.168.1.0/24,US,California,San Francisco,94107\n2607:f8b0:4005:805::200e,US,California,Mountain View,94043\n",
 		},
 		{
 			name:      "Verbosity full",
