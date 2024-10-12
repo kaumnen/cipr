@@ -99,11 +99,11 @@ func filtrateIPRanges(rawData, ipType string, filterSlice []string) []IPPrefix {
 	var prefixes []IPPrefix
 	var result []IPPrefix
 
-	if ipType == "aws_ipv4" {
+	if ipType == "ipv4" {
 		for _, prefix := range data.Prefixes {
 			prefixes = append(prefixes, prefix)
 		}
-	} else if ipType == "aws_ipv6" {
+	} else if ipType == "ipv6" {
 		for _, prefix := range data.IPv6Prefixes {
 			prefixes = append(prefixes, prefix)
 		}
