@@ -29,9 +29,9 @@ var icloudCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		ipType := "icloud_ipv4"
+		ipType := "ipv4"
 		if viper.GetBool("icloud_ipv6") {
-			ipType = "icloud_ipv6"
+			ipType = "ipv6"
 		}
 
 		if !viper.GetBool("icloud_ipv4") && !viper.GetBool("icloud_ipv6") {

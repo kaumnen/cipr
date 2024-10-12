@@ -62,8 +62,8 @@ func filtrateIPRanges(ipRanges []IPRange, config Config) []IPRange {
 	var readyIPs []IPRange
 
 	for _, ipRange := range ipRanges {
-		if (config.IPType == "icloud_ipv4" && strings.Contains(ipRange.IPRange, ".")) ||
-			(config.IPType == "icloud_ipv6" && strings.Contains(ipRange.IPRange, ":")) ||
+		if (config.IPType == "ipv4" && strings.Contains(ipRange.IPRange, ".")) ||
+			(config.IPType == "ipv6" && strings.Contains(ipRange.IPRange, ":")) ||
 			(config.IPType == "both" && (strings.Contains(ipRange.IPRange, ".") || strings.Contains(ipRange.IPRange, ":"))) {
 
 			if (len(config.Filters.Country) == 0 || containsIgnoreCase(config.Filters.Country, ipRange.Country)) &&
