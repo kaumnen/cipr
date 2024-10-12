@@ -31,10 +31,10 @@ var awsCmd = &cobra.Command{
 		ipVersion := []string{}
 
 		if viper.GetBool("aws_ipv4") || (!viper.GetBool("aws_ipv4") && !viper.GetBool("aws_ipv6")) {
-			ipVersion = append(ipVersion, "aws_ipv4")
+			ipVersion = append(ipVersion, "ipv4")
 		}
 		if viper.GetBool("aws_ipv6") || (!viper.GetBool("aws_ipv4") && !viper.GetBool("aws_ipv6")) {
-			ipVersion = append(ipVersion, "aws_ipv6")
+			ipVersion = append(ipVersion, "ipv6")
 		}
 
 		filter := viper.GetString("aws-filter")
@@ -61,7 +61,6 @@ var awsCmd = &cobra.Command{
 		}
 
 		for _, version := range ipVersion {
-			fmt.Println(version)
 			config.IPType = version
 			aws.GetIPRanges(config)
 		}
