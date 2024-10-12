@@ -29,11 +29,12 @@ var awsCmd = &cobra.Command{
 		}
 
 		ipVersion := []string{}
-		if viper.GetBool("ipv4") || (!viper.GetBool("ipv4") && !viper.GetBool("ipv6")) {
-			ipVersion = append(ipVersion, "ipv4")
+
+		if viper.GetBool("aws_ipv4") || (!viper.GetBool("aws_ipv4") && !viper.GetBool("aws_ipv6")) {
+			ipVersion = append(ipVersion, "aws_ipv4")
 		}
-		if viper.GetBool("ipv6") || (!viper.GetBool("ipv4") && !viper.GetBool("ipv6")) {
-			ipVersion = append(ipVersion, "ipv6")
+		if viper.GetBool("aws_ipv6") || (!viper.GetBool("aws_ipv4") && !viper.GetBool("aws_ipv6")) {
+			ipVersion = append(ipVersion, "aws_ipv6")
 		}
 
 		filter := viper.GetString("aws-filter")
@@ -60,6 +61,7 @@ var awsCmd = &cobra.Command{
 		}
 
 		for _, version := range ipVersion {
+			fmt.Println(version)
 			config.IPType = version
 			aws.GetIPRanges(config)
 		}
@@ -77,8 +79,8 @@ func init() {
 	awsCmd.Flags().String("filter-service", "", "Filter results by AWS service")
 	awsCmd.Flags().String("filter-network-border-group", "", "Filter results by AWS network border group")
 
-	viper.BindPFlag("ipv4", awsCmd.Flags().Lookup("ipv4"))
-	viper.BindPFlag("ipv6", awsCmd.Flags().Lookup("ipv6"))
+	viper.BindPFlag("aws_ipv4", awsCmd.Flags().Lookup("ipv4"))
+	viper.BindPFlag("aws_ipv6", awsCmd.Flags().Lookup("ipv6"))
 	viper.BindPFlag("aws-filter", awsCmd.Flags().Lookup("filter"))
 	viper.BindPFlag("aws-filter-region", awsCmd.Flags().Lookup("filter-region"))
 	viper.BindPFlag("aws-filter-service", awsCmd.Flags().Lookup("filter-service"))
