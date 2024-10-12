@@ -50,7 +50,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 	}{
 		{
 			name:        "ipv4 - filters: us-east-1 region, EBS service",
-			ipType:      "aws_ipv4",
+			ipType:      "ipv4",
 			filterSlice: []string{"us-east-1", "EBS", "*"},
 			expected: []IPPrefix{
 				IPv4Prefix{IPAddress: "44.192.140.112/28", Region: "us-east-1", Service: "EBS", NetworkBorderGroup: "us-east-1"},
@@ -61,7 +61,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 		},
 		{
 			name:        "ipv6 - filters: eu-central-1 region, S3 service, eu-central-1 network border group",
-			ipType:      "aws_ipv6",
+			ipType:      "ipv6",
 			filterSlice: []string{"eu-central-1", "S3", "eu-central-1"},
 			expected: []IPPrefix{
 				IPv6Prefix{IPv6Address: "2a05:d070:4000::/40", Region: "eu-central-1", Service: "S3", NetworkBorderGroup: "eu-central-1"},
