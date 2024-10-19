@@ -53,7 +53,7 @@ type Config struct {
 }
 
 func GetIPRanges(config Config) {
-	rawData := utils.GetRawData("https://ip-ranges.amazonaws.com/ip-ranges.json")
+	rawData := utils.GetRawData("aws")
 
 	filterSlice := separateFilters(config.Filter)
 
