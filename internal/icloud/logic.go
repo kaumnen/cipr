@@ -34,8 +34,11 @@ func GetIPRanges(config Config) {
 }
 
 func loadData() []IPRange {
-	rawData := utils.GetRawData("https://mask-api.icloud.com/egress-ip-ranges.csv")
+	rawData := utils.GetRawData("icloud")
+
 	r := csv.NewReader(strings.NewReader(rawData))
+	r.FieldsPerRecord = -1
+
 	records, err := r.ReadAll()
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -44,15 +47,21 @@ func loadData() []IPRange {
 
 	var ipRanges []IPRange
 	for _, record := range records {
-		if len(record) < 4 {
-			continue
+		ipRange := IPRange{}
+
+		if len(record) > 0 {
+			ipRange.IPRange = strings.TrimSpace(record[0])
 		}
-		ipRange := IPRange{
-			IPRange: record[0],
-			Country: record[1],
-			Region:  record[2],
-			City:    record[3],
+		if len(record) > 1 {
+			ipRange.Country = strings.TrimSpace(record[1])
 		}
+		if len(record) > 2 {
+			ipRange.Region = strings.TrimSpace(record[2])
+		}
+		if len(record) > 3 {
+			ipRange.City = strings.TrimSpace(record[3])
+		}
+
 		ipRanges = append(ipRanges, ipRange)
 	}
 	return ipRanges
