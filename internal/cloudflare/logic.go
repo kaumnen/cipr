@@ -2,7 +2,6 @@ package cloudflare
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/kaumnen/cipr/internal/utils"
@@ -14,17 +13,13 @@ type Config struct {
 }
 
 func GetCloudflareIPRanges(config Config) {
-	var url string
+	var rawData string
 	if config.IPType == "ipv4" {
-		url = "https://www.cloudflare.com/ips-v4/"
+		rawData = utils.GetRawData("cloudflare_ipv4")
 	} else if config.IPType == "ipv6" {
-		url = "https://www.cloudflare.com/ips-v6/"
-	} else {
-		fmt.Fprintf(os.Stderr, "Unsupported IP type: %s\n", config.IPType)
-		return
+		rawData = utils.GetRawData("cloudflare_ipv6")
 	}
 
-	rawData := utils.GetRawData(url)
 	ipRanges := parseIPRanges(rawData)
 
 	printCloudflareIPRanges(ipRanges, config.Verbosity)
