@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/BurntSushi/toml"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -64,17 +65,18 @@ func initConfig() {
 }
 
 func createDefaultConfig(configPath string) {
-	viper.SetDefault("aws_endpoint", "https://ip-ranges.amazonaws.com/ip-ranges.json")
-	viper.SetDefault("aws_local_file", "")
-
-	viper.SetDefault("cloudflare_endpoint", "https://www.cloudflare.com/")
-	viper.SetDefault("cloudflare_local_file", "")
-
-	viper.SetDefault("icloud_endpoint", "https://mask-api.icloud.com/egress-ip-ranges.csv")
-	viper.SetDefault("icloud_local_file", "")
-
-	viper.SetDefault("digitalocean_endpoint", "https://digitalocean.com/geo/google.csv")
-	viper.SetDefault("digitalocean_local_file", "")
+	config := map[string]interface{}{
+		"aws_endpoint":               "https://ip-ranges.amazonaws.com/ip-ranges.json",
+		"aws_local_file":             "",
+		"cloudflare_ipv4_endpoint":   "https://www.cloudflare.com/ips-v4/",
+		"cloudflare_ipv4_local_file": "",
+		"cloudflare_ipv6_endpoint":   "https://www.cloudflare.com/ips-v6/",
+		"cloudflare_ipv6_local_file": "",
+		"icloud_endpoint":            "https://mask-api.icloud.com/egress-ip-ranges.csv",
+		"icloud_local_file":          "",
+		"digitalocean_endpoint":      "https://digitalocean.com/geo/google.csv",
+		"digitalocean_local_file":    "",
+	}
 
 	dir := filepath.Dir(configPath)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -84,10 +86,16 @@ func createDefaultConfig(configPath string) {
 		}
 	}
 
-	if err := viper.WriteConfigAs(configPath); err != nil {
+	file, err := os.Create(configPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error creating config file:", err)
+		os.Exit(1)
+	}
+	defer file.Close()
+
+	encoder := toml.NewEncoder(file)
+	if err := encoder.Encode(config); err != nil {
 		fmt.Fprintln(os.Stderr, "Error writing config file:", err)
 		os.Exit(1)
 	}
-
-	fmt.Fprintln(os.Stderr, "Created default config file at", configPath)
 }
