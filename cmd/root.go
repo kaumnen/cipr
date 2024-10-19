@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -46,14 +47,47 @@ func initConfig() {
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
 
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(".cipr")
+		configPath := filepath.Join(home, ".config", "cipr", "cipr.toml")
+		viper.SetConfigFile(configPath)
+		viper.SetConfigType("toml")
+
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			createDefaultConfig(configPath)
+		}
 	}
 
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Fprintln(os.Stderr, "Error reading config file:", err)
 	}
+}
+
+func createDefaultConfig(configPath string) {
+	viper.SetDefault("aws_endpoint", "https://ip-ranges.amazonaws.com/ip-ranges.json")
+	viper.SetDefault("aws_local_file", "")
+
+	viper.SetDefault("cloudflare_endpoint", "https://www.cloudflare.com/")
+	viper.SetDefault("cloudflare_local_file", "")
+
+	viper.SetDefault("icloud_endpoint", "https://mask-api.icloud.com/egress-ip-ranges.csv")
+	viper.SetDefault("icloud_local_file", "")
+
+	viper.SetDefault("digitalocean_endpoint", "https://digitalocean.com/geo/google.csv")
+	viper.SetDefault("digitalocean_local_file", "")
+
+	dir := filepath.Dir(configPath)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			fmt.Fprintln(os.Stderr, "Error creating config directory:", err)
+			os.Exit(1)
+		}
+	}
+
+	if err := viper.WriteConfigAs(configPath); err != nil {
+		fmt.Fprintln(os.Stderr, "Error writing config file:", err)
+		os.Exit(1)
+	}
+
+	fmt.Fprintln(os.Stderr, "Created default config file at", configPath)
 }
