@@ -36,9 +36,11 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output (equivalent to --verbose-mode=full)")
 	rootCmd.PersistentFlags().String("verbose-mode", "none", "Verbosity level: none, mini, full. Overrides --verbose")
+	rootCmd.PersistentFlags().String("source", "hosted", "Custom data source for ip ranges (url or path). Must have https:// for urls.")
 
 	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
 	viper.BindPFlag("verbose_mode", rootCmd.PersistentFlags().Lookup("verbose-mode"))
+	viper.BindPFlag("source", rootCmd.PersistentFlags().Lookup("source"))
 }
 
 func initConfig() {
