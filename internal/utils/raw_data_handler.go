@@ -5,13 +5,23 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/spf13/viper"
 )
 
 func GetRawData(provider string) string {
-	endpointURL := viper.GetString(provider + "_endpoint")
-	localFile := viper.GetString(provider + "_local_file")
+	endpointURL := ""
+	localFile := ""
+
+	if strings.Contains(provider, "/") {
+		localFile = provider
+	} else if strings.Contains(provider, "https://") {
+		endpointURL = provider
+	} else {
+		endpointURL = viper.GetString(provider + "_endpoint")
+		localFile = viper.GetString(provider + "_local_file")
+	}
 
 	var ipRanges string
 	var err error
