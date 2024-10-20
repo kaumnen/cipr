@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/kaumnen/cipr/internal/utils"
+	"github.com/spf13/viper"
 )
 
 type IPRange struct {
@@ -34,7 +35,14 @@ func GetIPRanges(config Config) {
 }
 
 func loadData() []IPRange {
-	rawData := utils.GetRawData("icloud")
+	var rawData string
+	ipRangesSource := viper.GetString("source")
+
+	if ipRangesSource == "hosted" {
+		rawData = utils.GetRawData("icloud")
+	} else {
+		rawData = utils.GetRawData(ipRangesSource)
+	}
 
 	r := csv.NewReader(strings.NewReader(rawData))
 	r.FieldsPerRecord = -1
