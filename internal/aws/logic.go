@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/kaumnen/cipr/internal/utils"
+	"github.com/spf13/viper"
 )
 
 type IPv4Prefix struct {
@@ -53,7 +54,14 @@ type Config struct {
 }
 
 func GetIPRanges(config Config) {
-	rawData := utils.GetRawData("aws")
+	var rawData string
+	ipRangesSource := viper.GetString("source")
+
+	if ipRangesSource == "hosted" {
+		rawData = utils.GetRawData("aws")
+	} else {
+		rawData = utils.GetRawData(ipRangesSource)
+	}
 
 	filterSlice := separateFilters(config.Filter)
 
