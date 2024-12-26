@@ -5,7 +5,9 @@ before:
     - go mod tidy
 
 builds:
-  - env:
+  - ldflags:
+      - "-s -w -X github.com/kaumnen/cipr/cmd.version={{ .Env.VERSION }}"
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -13,8 +15,6 @@ builds:
     goarch:
       - amd64
       - arm64
-    ldflags:
-      - "-s -w -X github.com/kaumnen/cipr/cmd.version={{ .Env.VERSION }}"
 
 universal_binaries:
   - replace: true
