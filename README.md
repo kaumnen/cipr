@@ -12,13 +12,13 @@ cipr is a command-line interface (CLI) tool designed to simplify the process of 
 To install cipr, you can use homebrew:
 
 ```bash title='CLI command'
-brew tap kaumnen/kaumnen
+brew tap kaumnen/tap
 brew install cipr
 ```
 
 > [!NOTE]  
 > Currently available for Linux and MacOS systems.
-> 
+>
 > Documentation available at: [cipr.sh](https://cipr.sh/docs/intro)
 
 ## Contributing
