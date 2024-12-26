@@ -25,10 +25,10 @@ release:
     name: cipr
 
 brews:
-  - homepage: https://github.com/kaumnen/homebrew-kaumnen
+  - homepage: https://github.com/kaumnen/tap
     repository:
       owner: kaumnen
-      name: homebrew-kaumnen
+      name: tap
 
 changelog:
   sort: asc
