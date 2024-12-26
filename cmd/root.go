@@ -12,7 +12,7 @@ import (
 
 var (
 	cfgFile string
-	version string
+	version = ""
 )
 
 var rootCmd = &cobra.Command{

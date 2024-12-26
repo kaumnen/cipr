@@ -30,3 +30,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASER_TOKEN }}
+          VERSION: ${{ github.ref_name }}
