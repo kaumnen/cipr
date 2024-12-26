@@ -14,7 +14,7 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -s -w -X github.com/kaumnen/cipr/cmd.version={{ .Env.VERSION }}
+      - "-s -w -X github.com/kaumnen/cipr/cmd.version={{ .Env.VERSION }}"
 
 universal_binaries:
   - replace: true
