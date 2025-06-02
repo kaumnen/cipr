@@ -4,6 +4,7 @@
 ![GitHub License](https://img.shields.io/github/license/kaumnen/cipr)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/kaumnen/cipr/releaser.yml)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kaumnen/cipr)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkaumnen%2Fcipr.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkaumnen%2Fcipr?ref=badge_shield)
 
 cipr is a command-line interface (CLI) tool designed to simplify the process of retrieving IP ranges from various cloud providers and services. It provides a quick and efficient way to access up-to-date IP ranges, which can be particularly useful for network administrators, security professionals, and developers working with cloud infrastructure.
 
@@ -33,3 +34,6 @@ More info available here - [CONTRIBUTING.md](https://github.com/kaumnen/cipr/blo
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkaumnen%2Fcipr.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkaumnen%2Fcipr?ref=badge_large)
