@@ -14,20 +14,23 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version: stable
+          go-version-file: go.mod
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: latest
           args: release --clean
         env:
+          # RELEASER_TOKEN is a PAT (not the default GITHUB_TOKEN) because
+          # goreleaser pushes the brew formula to the separate kaumnen/homebrew-tap repo,
+          # which the workflow's GITHUB_TOKEN cannot write to.
           GITHUB_TOKEN: ${{ secrets.RELEASER_TOKEN }}
           VERSION: ${{ github.ref_name }}

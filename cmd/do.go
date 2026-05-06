@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/kaumnen/cipr/internal/digitalocean"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -14,25 +11,16 @@ var doCmd = &cobra.Command{
 	Short: "Get Digital Ocean IP ranges",
 	Long:  `Retrieve Digital Ocean IPv4 and IPv6 ranges with optional verbosity levels.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var verbosity string
-		if cmd.Flags().Changed("verbose-mode") {
-			verbosity = viper.GetString("verbose_mode")
-		} else if viper.GetBool("verbose") {
-			verbosity = "full"
-		} else {
-			verbosity = "none"
-		}
+		verbosity := resolveVerbosity(cmd)
 
-		if !isValidVerbosity(verbosity) {
-			fmt.Fprintf(os.Stderr, "Invalid verbosity level: %s. Allowed values are: none, mini, full.\n", verbosity)
-			os.Exit(1)
-		}
-
-		ipVersions := []string{}
-		if viper.GetBool("do_ipv4") || (!viper.GetBool("do_ipv4") && !viper.GetBool("do_ipv6")) {
+		ipv4 := viper.GetBool("do_ipv4")
+		ipv6 := viper.GetBool("do_ipv6")
+		both := !ipv4 && !ipv6
+		var ipVersions []string
+		if ipv4 || both {
 			ipVersions = append(ipVersions, "ipv4")
 		}
-		if viper.GetBool("do_ipv6") || (!viper.GetBool("do_ipv4") && !viper.GetBool("do_ipv6")) {
+		if ipv6 || both {
 			ipVersions = append(ipVersions, "ipv6")
 		}
 

@@ -50,21 +50,10 @@ func printCloudflareIPRanges(ipRanges []string, verbosity string) {
 		return
 	}
 
-	switch verbosity {
-	case "none":
-		for _, ip := range ipRanges {
-			fmt.Println(ip)
-		}
-	case "mini":
-		for _, ip := range ipRanges {
-			fmt.Println(ip)
-		}
-	case "full":
-		for _, ip := range ipRanges {
+	for _, ip := range ipRanges {
+		if verbosity == "full" {
 			fmt.Printf("Cloudflare IP: %s\n", ip)
-		}
-	default:
-		for _, ip := range ipRanges {
+		} else {
 			fmt.Println(ip)
 		}
 	}

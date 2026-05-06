@@ -1,0 +1,28 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+  exclusions:
+    rules:
+      # Idiomatic Go: deferred Close() on response/file bodies, return-error
+      # paths in tests, and viper.BindPFlag in cobra init() blocks all return
+      # errors that are conventionally ignored.
+      - linters: [errcheck]
+        text: "Error return value of `(.*\\.Close|.*\\.BindPFlag|io\\.Copy|.*\\.ReadFrom)` is not checked"
+      # QF* checks are stylistic quickfix suggestions, not bug indicators.
+      - linters: [staticcheck]
+        text: "^QF[0-9]+:"
+      # ST1000 (missing package comment) is noise on small internal packages.
+      - linters: [staticcheck]
+        text: "^ST1000:"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

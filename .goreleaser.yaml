@@ -16,8 +16,11 @@ builds:
       - amd64
       - arm64
 
-universal_binaries:
-  - replace: true
+archives:
+  - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
 
 release:
   github:
@@ -25,7 +28,7 @@ release:
     name: cipr
 
 brews:
-  - homepage: https://github.com/kaumnen/homebrew-tap
+  - homepage: https://github.com/kaumnen/cipr
     repository:
       owner: kaumnen
       name: homebrew-tap

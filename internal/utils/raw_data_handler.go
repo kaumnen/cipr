@@ -6,18 +6,21 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
+
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 func GetRawData(provider string) string {
 	endpointURL := ""
 	localFile := ""
 
-	if strings.Contains(provider, "/") {
-		localFile = provider
-	} else if strings.Contains(provider, "https://") {
+	if strings.HasPrefix(provider, "https://") || strings.HasPrefix(provider, "http://") {
 		endpointURL = provider
+	} else if strings.Contains(provider, "/") {
+		localFile = provider
 	} else {
 		endpointURL = viper.GetString(provider + "_endpoint")
 		localFile = viper.GetString(provider + "_local_file")
@@ -66,18 +69,19 @@ func loadFromFile(filePath string) (string, error) {
 }
 
 func loadFromEndpoint(url string) (string, error) {
-	logger := GetCiprLogger()
-	response, err := http.Get(url)
-
+	response, err := httpClient.Get(url)
 	if err != nil {
-		logger.Println(err.Error())
-		os.Exit(1)
+		return "", err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode >= 400 {
+		return "", fmt.Errorf("unexpected status %d from %s", response.StatusCode, url)
 	}
 
 	responseData, err := io.ReadAll(response.Body)
-
 	if err != nil {
-		logger.Fatal(err)
+		return "", err
 	}
 
 	return string(responseData), nil

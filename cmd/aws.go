@@ -14,26 +14,16 @@ var awsCmd = &cobra.Command{
 	Short: "Get AWS IP ranges.",
 	Long:  `Get AWS IPv4 and IPv6 ranges with optional filtering.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var verbosity string
-		if cmd.Flags().Changed("verbose-mode") {
-			verbosity = viper.GetString("verbose_mode")
-		} else if viper.GetBool("verbose") {
-			verbosity = "full"
-		} else {
-			verbosity = "none"
-		}
+		verbosity := resolveVerbosity(cmd)
 
-		if !isValidVerbosity(verbosity) {
-			fmt.Fprintf(os.Stderr, "Invalid verbosity level: %s. Allowed values are: none, mini, full.\n", verbosity)
-			os.Exit(1)
-		}
-
-		ipVersion := []string{}
-
-		if viper.GetBool("aws_ipv4") || (!viper.GetBool("aws_ipv4") && !viper.GetBool("aws_ipv6")) {
+		ipv4 := viper.GetBool("aws_ipv4")
+		ipv6 := viper.GetBool("aws_ipv6")
+		both := !ipv4 && !ipv6
+		var ipVersion []string
+		if ipv4 || both {
 			ipVersion = append(ipVersion, "ipv4")
 		}
-		if viper.GetBool("aws_ipv6") || (!viper.GetBool("aws_ipv4") && !viper.GetBool("aws_ipv6")) {
+		if ipv6 || both {
 			ipVersion = append(ipVersion, "ipv6")
 		}
 

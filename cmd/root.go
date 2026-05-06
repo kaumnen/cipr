@@ -18,8 +18,13 @@ var (
 var rootCmd = &cobra.Command{
 	Use:     "cipr",
 	Version: version,
-	Short:   "",
-	Long:    ``,
+	Short:   "Retrieve IP ranges from cloud providers and services",
+	Long: `cipr is a CLI tool for retrieving IP ranges from various cloud providers
+and services (AWS, Cloudflare, DigitalOcean, iCloud Private Relay).
+
+It provides a quick and efficient way to access up-to-date IP ranges, useful
+for network administrators, security professionals, and developers working
+with cloud infrastructure.`,
 }
 
 func Execute() {
@@ -66,6 +71,32 @@ func initConfig() {
 	}
 }
 
+func resolveVerbosity(cmd *cobra.Command) string {
+	var verbosity string
+	switch {
+	case cmd.Flags().Changed("verbose-mode"):
+		verbosity = viper.GetString("verbose_mode")
+	case viper.GetBool("verbose"):
+		verbosity = "full"
+	default:
+		verbosity = "none"
+	}
+
+	if !isValidVerbosity(verbosity) {
+		fmt.Fprintf(os.Stderr, "Invalid verbosity level: %s. Allowed values are: none, mini, full.\n", verbosity)
+		os.Exit(1)
+	}
+	return verbosity
+}
+
+func isValidVerbosity(v string) bool {
+	switch v {
+	case "none", "mini", "full":
+		return true
+	}
+	return false
+}
+
 func createDefaultConfig(configPath string) {
 	config := map[string]interface{}{
 		"aws_endpoint":               "https://ip-ranges.amazonaws.com/ip-ranges.json",
@@ -82,7 +113,7 @@ func createDefaultConfig(configPath string) {
 
 	dir := filepath.Dir(configPath)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
 			fmt.Fprintln(os.Stderr, "Error creating config directory:", err)
 			os.Exit(1)
 		}

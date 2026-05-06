@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/kaumnen/cipr/internal/icloud"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -14,20 +11,7 @@ var icloudCmd = &cobra.Command{
 	Short: "Get iCloud private relay IP ranges.",
 	Long:  `Get iCloud private relay IPv4 and IPv6 ranges.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var verbosity string
-
-		if cmd.Flags().Changed("verbose-mode") {
-			verbosity = viper.GetString("verbose_mode")
-		} else if viper.GetBool("verbose") {
-			verbosity = "full"
-		} else {
-			verbosity = "none"
-		}
-
-		if !isValidVerbosity(verbosity) {
-			fmt.Fprintf(os.Stderr, "Invalid verbosity level: %s. Allowed values are: none, mini, full.\n", verbosity)
-			os.Exit(1)
-		}
+		verbosity := resolveVerbosity(cmd)
 
 		ipType := "ipv4"
 		if viper.GetBool("icloud_ipv6") {
@@ -66,13 +50,4 @@ func init() {
 	viper.BindPFlag("icloud-filter-city", icloudCmd.Flags().Lookup("filter-city"))
 
 	rootCmd.AddCommand(icloudCmd)
-}
-
-func isValidVerbosity(verbosity string) bool {
-	switch verbosity {
-	case "none", "mini", "full":
-		return true
-	default:
-		return false
-	}
 }

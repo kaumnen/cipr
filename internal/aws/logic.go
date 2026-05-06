@@ -123,11 +123,6 @@ func filtrateIPRanges(rawData, ipType string, filterSlice []string) []IPPrefix {
 		}
 	}
 
-	if len(result) == 0 {
-		fmt.Println("No IP ranges to display.")
-		return nil
-	}
-
 	return result
 }
 
