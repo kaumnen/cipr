@@ -29,7 +29,17 @@ jobs:
         run: go build -v ./...
 
       - name: Run Tests
-        run: go test -v -cover ./...
+        run: go test -v -coverprofile=coverage.out ./...
+
+      - name: Coverage summary
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          {
+            echo '## Coverage'
+            echo '```'
+            go tool cover -func=coverage.out
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   lint:
     runs-on: ubuntu-latest
