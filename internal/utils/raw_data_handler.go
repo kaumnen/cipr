@@ -31,26 +31,26 @@ func GetRawData(provider string) string {
 
 	if localFile != "" {
 
-		fmt.Println("Fetching IP ranges from local file:", localFile)
+		fmt.Fprintln(os.Stderr, "Fetching IP ranges from local file:", localFile)
 		ipRanges, err = loadFromFile(localFile)
 
 		if err != nil {
-			fmt.Println("Error reading local file:", err)
+			fmt.Fprintln(os.Stderr, "Error reading local file:", err)
 			os.Exit(1)
 
 		}
 	} else {
 		if endpointURL == "" {
-			fmt.Println("No endpoint URL or local file specified.")
+			fmt.Fprintln(os.Stderr, "No endpoint URL or local file specified.")
 			os.Exit(1)
 		}
 
-		fmt.Println("Fetching IP ranges from endpoint:", endpointURL)
+		fmt.Fprintln(os.Stderr, "Fetching IP ranges from endpoint:", endpointURL)
 
 		ipRanges, err = loadFromEndpoint(endpointURL)
 
 		if err != nil {
-			fmt.Println("Error fetching from endpoint:", err)
+			fmt.Fprintln(os.Stderr, "Error fetching from endpoint:", err)
 			os.Exit(1)
 		}
 	}

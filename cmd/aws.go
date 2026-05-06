@@ -1,8 +1,8 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
-	"os"
 
 	"github.com/kaumnen/cipr/internal/aws"
 	"github.com/spf13/cobra"
@@ -13,7 +13,7 @@ var awsCmd = &cobra.Command{
 	Use:   "aws",
 	Short: "Get AWS IP ranges.",
 	Long:  `Get AWS IPv4 and IPv6 ranges with optional filtering.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		verbosity := resolveVerbosity(cmd)
 
 		ipv4 := viper.GetBool("aws_ipv4")
@@ -33,8 +33,7 @@ var awsCmd = &cobra.Command{
 		filterNetworkBorderGroup := viper.GetString("aws-filter-network-border-group")
 
 		if filter != "" && (filterRegion != "" || filterService != "" || filterNetworkBorderGroup != "") {
-			fmt.Fprintln(os.Stderr, "--filter flag cannot be used with individual filter flags")
-			os.Exit(1)
+			return errors.New("--filter cannot be used with individual filter flags")
 		}
 
 		var awsFilter string
@@ -44,16 +43,14 @@ var awsCmd = &cobra.Command{
 			awsFilter = fmt.Sprintf("%s,%s,%s", filterRegion, filterService, filterNetworkBorderGroup)
 		}
 
-		config := aws.Config{
-			IPType:    "",
-			Filter:    awsFilter,
-			Verbosity: verbosity,
-		}
-
 		for _, version := range ipVersion {
-			config.IPType = version
-			aws.GetIPRanges(config)
+			aws.GetIPRanges(aws.Config{
+				IPType:    version,
+				Filter:    awsFilter,
+				Verbosity: verbosity,
+			})
 		}
+		return nil
 	},
 }
 
@@ -62,7 +59,7 @@ func init() {
 
 	awsCmd.Flags().Bool("ipv4", false, "Get only IPv4 ranges")
 	awsCmd.Flags().Bool("ipv6", false, "Get only IPv6 ranges")
-	awsCmd.Flags().String("filter", "", "Filter results. Syntax: aws-region-az,SERVICE,network-border-group")
+	awsCmd.Flags().String("filter", "", "Filter results. Syntax: region,service,network-border-group")
 
 	awsCmd.Flags().String("filter-region", "", "Filter results by AWS region")
 	awsCmd.Flags().String("filter-service", "", "Filter results by AWS service")
