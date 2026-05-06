@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/kaumnen/cipr/internal/icloud"
+	"github.com/kaumnen/cipr/internal/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -10,7 +11,7 @@ var icloudCmd = &cobra.Command{
 	Use:   "icloud",
 	Short: "Get iCloud private relay IP ranges.",
 	Long:  `Get iCloud private relay IPv4 and IPv6 ranges.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		verbosity := resolveVerbosity(cmd)
 
 		ipType := "ipv4"
@@ -22,7 +23,8 @@ var icloudCmd = &cobra.Command{
 			ipType = "both"
 		}
 
-		config := icloud.Config{
+		return icloud.GetIPRanges(cmd.Context(), icloud.Config{
+			Source: utils.ResolveSource("icloud"),
 			IPType: ipType,
 			Filters: icloud.Filters{
 				Country: viper.GetStringSlice("icloud-filter-country"),
@@ -30,9 +32,7 @@ var icloudCmd = &cobra.Command{
 				City:    viper.GetStringSlice("icloud-filter-city"),
 			},
 			Verbosity: verbosity,
-		}
-
-		icloud.GetIPRanges(config)
+		})
 	},
 }
 

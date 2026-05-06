@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,67 +12,59 @@ import (
 	"github.com/spf13/viper"
 )
 
+// UserAgent is sent with every outgoing HTTP request. cmd populates it
+// with the build version when one is set.
+var UserAgent = "cipr"
+
 var httpClient = &http.Client{Timeout: 30 * time.Second}
 
-func GetRawData(provider string) string {
-	endpointURL := ""
-	localFile := ""
+// GetRawData fetches IP-range data for the given source. The source may be
+// a config-key prefix (e.g. "aws", looked up in viper), an http(s) URL, or
+// a filesystem path containing a slash.
+func GetRawData(ctx context.Context, source string) (string, error) {
+	var endpointURL, localFile string
 
-	if strings.HasPrefix(provider, "https://") || strings.HasPrefix(provider, "http://") {
-		endpointURL = provider
-	} else if strings.Contains(provider, "/") {
-		localFile = provider
-	} else {
-		endpointURL = viper.GetString(provider + "_endpoint")
-		localFile = viper.GetString(provider + "_local_file")
+	switch {
+	case strings.HasPrefix(source, "https://") || strings.HasPrefix(source, "http://"):
+		endpointURL = source
+	case strings.Contains(source, "/"):
+		localFile = source
+	default:
+		endpointURL = viper.GetString(source + "_endpoint")
+		localFile = viper.GetString(source + "_local_file")
 	}
-
-	var ipRanges string
-	var err error
 
 	if localFile != "" {
-
 		fmt.Fprintln(os.Stderr, "Fetching IP ranges from local file:", localFile)
-		ipRanges, err = loadFromFile(localFile)
-
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error reading local file:", err)
-			os.Exit(1)
-
-		}
-	} else {
-		if endpointURL == "" {
-			fmt.Fprintln(os.Stderr, "No endpoint URL or local file specified.")
-			os.Exit(1)
-		}
-
-		fmt.Fprintln(os.Stderr, "Fetching IP ranges from endpoint:", endpointURL)
-
-		ipRanges, err = loadFromEndpoint(endpointURL)
-
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error fetching from endpoint:", err)
-			os.Exit(1)
-		}
+		return loadFromFile(localFile)
 	}
 
-	return ipRanges
+	if endpointURL == "" {
+		return "", fmt.Errorf("no endpoint URL or local file specified for source %q", source)
+	}
+
+	fmt.Fprintln(os.Stderr, "Fetching IP ranges from endpoint:", endpointURL)
+	return loadFromEndpoint(ctx, endpointURL)
 }
 
 func loadFromFile(filePath string) (string, error) {
 	data, err := os.ReadFile(filePath)
-
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("read %s: %w", filePath, err)
 	}
-
 	return string(data), nil
 }
 
-func loadFromEndpoint(url string) (string, error) {
-	response, err := httpClient.Get(url)
+func loadFromEndpoint(ctx context.Context, url string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("build request for %s: %w", url, err)
+	}
+	req.Header.Set("User-Agent", UserAgent)
+
+	response, err := httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("fetch %s: %w", url, err)
 	}
 	defer response.Body.Close()
 
@@ -79,10 +72,9 @@ func loadFromEndpoint(url string) (string, error) {
 		return "", fmt.Errorf("unexpected status %d from %s", response.StatusCode, url)
 	}
 
-	responseData, err := io.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("read body from %s: %w", url, err)
 	}
-
-	return string(responseData), nil
+	return string(body), nil
 }

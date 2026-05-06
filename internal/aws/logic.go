@@ -1,12 +1,12 @@
 package aws
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/kaumnen/cipr/internal/utils"
-	"github.com/spf13/viper"
 )
 
 type IPv4Prefix struct {
@@ -48,26 +48,25 @@ func (p IPv6Prefix) GetService() string            { return p.Service }
 func (p IPv6Prefix) GetNetworkBorderGroup() string { return p.NetworkBorderGroup }
 
 type Config struct {
+	Source    string
 	IPType    string
 	Filter    string
 	Verbosity string
 }
 
-func GetIPRanges(config Config) {
-	var rawData string
-	ipRangesSource := viper.GetString("source")
-
-	if ipRangesSource == "hosted" {
-		rawData = utils.GetRawData("aws")
-	} else {
-		rawData = utils.GetRawData(ipRangesSource)
+func GetIPRanges(ctx context.Context, config Config) error {
+	rawData, err := utils.GetRawData(ctx, config.Source)
+	if err != nil {
+		return err
 	}
 
 	filterSlice := separateFilters(config.Filter)
-
-	readyIPs := filtrateIPRanges(rawData, config.IPType, filterSlice)
-
+	readyIPs, err := filtrateIPRanges(rawData, config.IPType, filterSlice)
+	if err != nil {
+		return err
+	}
 	printIPRanges(readyIPs, config.Verbosity)
+	return nil
 }
 
 func separateFilters(filterFlagValues string) []string {
@@ -95,18 +94,13 @@ func separateFilters(filterFlagValues string) []string {
 	return filterSlice
 }
 
-func filtrateIPRanges(rawData, ipType string, filterSlice []string) []IPPrefix {
-	logger := utils.GetCiprLogger()
+func filtrateIPRanges(rawData, ipType string, filterSlice []string) ([]IPPrefix, error) {
 	var data IPsData
-
-	err := json.Unmarshal([]byte(rawData), &data)
-	if err != nil {
-		logger.Fatalf("Error unmarshalling JSON: %v", err)
+	if err := json.Unmarshal([]byte(rawData), &data); err != nil {
+		return nil, fmt.Errorf("parse aws ip-ranges json: %w", err)
 	}
 
 	var prefixes []IPPrefix
-	var result []IPPrefix
-
 	if ipType == "ipv4" {
 		for _, prefix := range data.Prefixes {
 			prefixes = append(prefixes, prefix)
@@ -117,13 +111,13 @@ func filtrateIPRanges(rawData, ipType string, filterSlice []string) []IPPrefix {
 		}
 	}
 
+	var result []IPPrefix
 	for _, prefix := range prefixes {
 		if matchesFilter(prefix, filterSlice) {
 			result = append(result, prefix)
 		}
 	}
-
-	return result
+	return result, nil
 }
 
 func matchesFilter(prefix IPPrefix, filterSlice []string) bool {

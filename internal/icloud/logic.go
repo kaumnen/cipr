@@ -1,12 +1,12 @@
 package icloud
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"strings"
 
 	"github.com/kaumnen/cipr/internal/utils"
-	"github.com/spf13/viper"
 )
 
 type IPRange struct {
@@ -23,40 +23,37 @@ type Filters struct {
 }
 
 type Config struct {
+	Source    string
 	IPType    string
 	Filters   Filters
 	Verbosity string
 }
 
-func GetIPRanges(config Config) {
-	ipRangesData := loadData()
-	readyIPs := filtrateIPRanges(ipRangesData, config)
-	printIPRanges(readyIPs, config.Verbosity)
+func GetIPRanges(ctx context.Context, config Config) error {
+	rawData, err := utils.GetRawData(ctx, config.Source)
+	if err != nil {
+		return err
+	}
+	ipRanges, err := parseRecords(rawData)
+	if err != nil {
+		return err
+	}
+	printIPRanges(filtrateIPRanges(ipRanges, config), config.Verbosity)
+	return nil
 }
 
-func loadData() []IPRange {
-	var rawData string
-	ipRangesSource := viper.GetString("source")
-
-	if ipRangesSource == "hosted" {
-		rawData = utils.GetRawData("icloud")
-	} else {
-		rawData = utils.GetRawData(ipRangesSource)
-	}
-
+func parseRecords(rawData string) ([]IPRange, error) {
 	r := csv.NewReader(strings.NewReader(rawData))
 	r.FieldsPerRecord = -1
 
 	records, err := r.ReadAll()
 	if err != nil {
-		fmt.Println("Error:", err)
-		return nil
+		return nil, fmt.Errorf("parse icloud csv: %w", err)
 	}
 
 	var ipRanges []IPRange
 	for _, record := range records {
 		ipRange := IPRange{}
-
 		if len(record) > 0 {
 			ipRange.IPRange = strings.TrimSpace(record[0])
 		}
@@ -69,37 +66,37 @@ func loadData() []IPRange {
 		if len(record) > 3 {
 			ipRange.City = strings.TrimSpace(record[3])
 		}
-
 		ipRanges = append(ipRanges, ipRange)
 	}
-	return ipRanges
+	return ipRanges, nil
 }
 
 func filtrateIPRanges(ipRanges []IPRange, config Config) []IPRange {
 	var readyIPs []IPRange
 
 	for _, ipRange := range ipRanges {
-		if (config.IPType == "ipv4" && strings.Contains(ipRange.IPRange, ".")) ||
-			(config.IPType == "ipv6" && strings.Contains(ipRange.IPRange, ":")) ||
-			(config.IPType == "both" && (strings.Contains(ipRange.IPRange, ".") || strings.Contains(ipRange.IPRange, ":"))) {
+		isV4 := utils.IsIPv4(ipRange.IPRange)
+		isV6 := utils.IsIPv6(ipRange.IPRange)
+		var familyMatch bool
+		switch config.IPType {
+		case "ipv4":
+			familyMatch = isV4
+		case "ipv6":
+			familyMatch = isV6
+		case "both":
+			familyMatch = isV4 || isV6
+		}
+		if !familyMatch {
+			continue
+		}
 
-			if (len(config.Filters.Country) == 0 || containsIgnoreCase(config.Filters.Country, ipRange.Country)) &&
-				(len(config.Filters.Region) == 0 || containsIgnoreCase(config.Filters.Region, ipRange.Region)) &&
-				(len(config.Filters.City) == 0 || containsIgnoreCase(config.Filters.City, ipRange.City)) {
-				readyIPs = append(readyIPs, ipRange)
-			}
+		if (len(config.Filters.Country) == 0 || utils.ContainsIgnoreCase(config.Filters.Country, ipRange.Country)) &&
+			(len(config.Filters.Region) == 0 || utils.ContainsIgnoreCase(config.Filters.Region, ipRange.Region)) &&
+			(len(config.Filters.City) == 0 || utils.ContainsIgnoreCase(config.Filters.City, ipRange.City)) {
+			readyIPs = append(readyIPs, ipRange)
 		}
 	}
 	return readyIPs
-}
-
-func containsIgnoreCase(slice []string, item string) bool {
-	for _, s := range slice {
-		if strings.EqualFold(s, item) {
-			return true
-		}
-	}
-	return false
 }
 
 func printIPRanges(ipRanges []IPRange, verbosity string) {

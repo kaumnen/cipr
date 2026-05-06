@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/kaumnen/cipr/internal/cloudflare"
+	"github.com/kaumnen/cipr/internal/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -10,7 +11,7 @@ var cloudflareCmd = &cobra.Command{
 	Use:   "cloudflare",
 	Short: "Get Cloudflare IP ranges",
 	Long:  `Retrieve Cloudflare IPv4 and IPv6 ranges with optional verbosity levels.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		verbosity := resolveVerbosity(cmd)
 
 		ipv4 := viper.GetBool("cloudflare_ipv4")
@@ -25,12 +26,15 @@ var cloudflareCmd = &cobra.Command{
 		}
 
 		for _, version := range ipVersions {
-			config := cloudflare.Config{
-				IPType:    version,
+			source := utils.ResolveSource("cloudflare_" + version)
+			if err := cloudflare.GetIPRanges(cmd.Context(), cloudflare.Config{
+				Source:    source,
 				Verbosity: verbosity,
+			}); err != nil {
+				return err
 			}
-			cloudflare.GetCloudflareIPRanges(config)
 		}
+		return nil
 	},
 }
 

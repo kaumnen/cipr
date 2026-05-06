@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/kaumnen/cipr/internal/digitalocean"
+	"github.com/kaumnen/cipr/internal/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -10,7 +11,7 @@ var doCmd = &cobra.Command{
 	Use:   "do",
 	Short: "Get Digital Ocean IP ranges",
 	Long:  `Retrieve Digital Ocean IPv4 and IPv6 ranges with optional verbosity levels.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		verbosity := resolveVerbosity(cmd)
 
 		ipv4 := viper.GetBool("do_ipv4")
@@ -24,8 +25,10 @@ var doCmd = &cobra.Command{
 			ipVersions = append(ipVersions, "ipv6")
 		}
 
+		source := utils.ResolveSource("digitalocean")
 		for _, version := range ipVersions {
-			config := digitalocean.Config{
+			if err := digitalocean.GetIPRanges(cmd.Context(), digitalocean.Config{
+				Source: source,
 				IPType: version,
 				Filters: digitalocean.Filters{
 					Country: viper.GetStringSlice("do-filter-country"),
@@ -34,9 +37,11 @@ var doCmd = &cobra.Command{
 					Zip:     viper.GetStringSlice("do-filter-zip"),
 				},
 				Verbosity: verbosity,
+			}); err != nil {
+				return err
 			}
-			digitalocean.GetIPRanges(config)
 		}
+		return nil
 	},
 }
 

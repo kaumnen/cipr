@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+	"github.com/kaumnen/cipr/internal/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -36,6 +37,10 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
+
+	if version != "" {
+		utils.UserAgent = "cipr/" + version
+	}
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "Config file (default is $HOME/.config/cipr/cipr.toml)")
 
@@ -98,17 +103,10 @@ func isValidVerbosity(v string) bool {
 }
 
 func createDefaultConfig(configPath string) {
-	config := map[string]interface{}{
-		"aws_endpoint":               "https://ip-ranges.amazonaws.com/ip-ranges.json",
-		"aws_local_file":             "",
-		"cloudflare_ipv4_endpoint":   "https://www.cloudflare.com/ips-v4/",
-		"cloudflare_ipv4_local_file": "",
-		"cloudflare_ipv6_endpoint":   "https://www.cloudflare.com/ips-v6/",
-		"cloudflare_ipv6_local_file": "",
-		"icloud_endpoint":            "https://mask-api.icloud.com/egress-ip-ranges.csv",
-		"icloud_local_file":          "",
-		"digitalocean_endpoint":      "https://digitalocean.com/geo/google.csv",
-		"digitalocean_local_file":    "",
+	config := map[string]interface{}{}
+	for key, url := range utils.DefaultEndpoints {
+		config[key+"_endpoint"] = url
+		config[key+"_local_file"] = ""
 	}
 
 	dir := filepath.Dir(configPath)

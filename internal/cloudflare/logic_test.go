@@ -70,7 +70,7 @@ func TestParseIPRanges_Fixtures(t *testing.T) {
 	assert.Equal(t, "2400:cb00::/32", v6[0])
 }
 
-func TestPrintCloudflareIPRanges(t *testing.T) {
+func TestPrintIPRanges(t *testing.T) {
 	testCases := []struct {
 		name           string
 		ipRanges       []string
@@ -109,7 +109,7 @@ func TestPrintCloudflareIPRanges(t *testing.T) {
 			r, w, _ := os.Pipe()
 			os.Stdout = w
 
-			printCloudflareIPRanges(tc.ipRanges, tc.verbosity)
+			printIPRanges(tc.ipRanges, tc.verbosity)
 
 			w.Close()
 			os.Stdout = oldStdout

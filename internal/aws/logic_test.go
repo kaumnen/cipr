@@ -78,7 +78,8 @@ func TestFiltrateIPRanges(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			rawData := mockGetReq()
 
-			result := filtrateIPRanges(rawData, tc.ipType, tc.filterSlice)
+			result, err := filtrateIPRanges(rawData, tc.ipType, tc.filterSlice)
+			assert.NoError(t, err)
 
 			assert.Equal(t, len(tc.expected), len(result), "Test case '%s' failed: expected %d items, got %d",
 				tc.name, len(tc.expected), len(result))

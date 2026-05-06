@@ -107,59 +107,6 @@ func TestFiltrateIPRanges(t *testing.T) {
 		})
 	}
 }
-func TestContainsIgnoreCase(t *testing.T) {
-	tests := []struct {
-		name     string
-		slice    []string
-		item     string
-		expected bool
-	}{
-		{
-			name:     "Item present in slice",
-			slice:    []string{"apple", "banana", "cherry"},
-			item:     "banana",
-			expected: true,
-		},
-		{
-			name:     "Item present in slice with different case",
-			slice:    []string{"apple", "banana", "cherry"},
-			item:     "Banana",
-			expected: true,
-		},
-		{
-			name:     "Item not present in slice",
-			slice:    []string{"apple", "banana", "cherry"},
-			item:     "grape",
-			expected: false,
-		},
-		{
-			name:     "Empty slice",
-			slice:    []string{},
-			item:     "apple",
-			expected: false,
-		},
-		{
-			name:     "Empty item",
-			slice:    []string{"apple", "banana", "cherry"},
-			item:     "",
-			expected: false,
-		},
-		{
-			name:     "Item present in slice with mixed case",
-			slice:    []string{"apple", "banana", "Cherry"},
-			item:     "cherry",
-			expected: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := containsIgnoreCase(tt.slice, tt.item)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestPrintIPRanges(t *testing.T) {
 	ipRanges := []IPRange{
 		{IPRange: "192.168.1.0/24", Country: "US", Region: "California", City: "San Francisco", Zip: "94107"},

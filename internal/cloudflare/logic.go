@@ -1,35 +1,25 @@
 package cloudflare
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/kaumnen/cipr/internal/utils"
-	"github.com/spf13/viper"
 )
 
 type Config struct {
-	IPType    string
+	Source    string
 	Verbosity string
 }
 
-func GetCloudflareIPRanges(config Config) {
-	var rawData string
-	ipRangesSource := viper.GetString("source")
-
-	if ipRangesSource == "hosted" {
-		if config.IPType == "ipv4" {
-			rawData = utils.GetRawData("cloudflare_ipv4")
-		} else if config.IPType == "ipv6" {
-			rawData = utils.GetRawData("cloudflare_ipv6")
-		}
-	} else {
-		rawData = utils.GetRawData(ipRangesSource)
+func GetIPRanges(ctx context.Context, config Config) error {
+	rawData, err := utils.GetRawData(ctx, config.Source)
+	if err != nil {
+		return err
 	}
-
-	ipRanges := parseIPRanges(rawData)
-
-	printCloudflareIPRanges(ipRanges, config.Verbosity)
+	printIPRanges(parseIPRanges(rawData), config.Verbosity)
+	return nil
 }
 
 func parseIPRanges(rawData string) []string {
@@ -44,7 +34,7 @@ func parseIPRanges(rawData string) []string {
 	return ipRanges
 }
 
-func printCloudflareIPRanges(ipRanges []string, verbosity string) {
+func printIPRanges(ipRanges []string, verbosity string) {
 	if len(ipRanges) == 0 {
 		fmt.Println("No IP ranges to display.")
 		return

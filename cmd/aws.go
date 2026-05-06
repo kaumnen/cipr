@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kaumnen/cipr/internal/aws"
+	"github.com/kaumnen/cipr/internal/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -43,12 +44,16 @@ var awsCmd = &cobra.Command{
 			awsFilter = fmt.Sprintf("%s,%s,%s", filterRegion, filterService, filterNetworkBorderGroup)
 		}
 
+		source := utils.ResolveSource("aws")
 		for _, version := range ipVersion {
-			aws.GetIPRanges(aws.Config{
+			if err := aws.GetIPRanges(cmd.Context(), aws.Config{
+				Source:    source,
 				IPType:    version,
 				Filter:    awsFilter,
 				Verbosity: verbosity,
-			})
+			}); err != nil {
+				return err
+			}
 		}
 		return nil
 	},
