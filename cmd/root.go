@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
-	"github.com/BurntSushi/toml"
 	"github.com/kaumnen/cipr/internal/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -103,12 +103,6 @@ func isValidVerbosity(v string) bool {
 }
 
 func createDefaultConfig(configPath string) {
-	config := map[string]interface{}{}
-	for key, url := range utils.DefaultEndpoints {
-		config[key+"_endpoint"] = url
-		config[key+"_local_file"] = ""
-	}
-
 	dir := filepath.Dir(configPath)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -124,9 +118,28 @@ func createDefaultConfig(configPath string) {
 	}
 	defer file.Close()
 
-	encoder := toml.NewEncoder(file)
-	if err := encoder.Encode(config); err != nil {
+	const header = `# cipr config. Override per-provider data sources here, or pass --source on
+# the command line. For each provider:
+#   <provider>_endpoint   = URL fetched when --source=hosted (the default)
+#   <provider>_local_file = if set, read ranges from this path instead of the network
+
+`
+	if _, err := fmt.Fprint(file, header); err != nil {
 		fmt.Fprintln(os.Stderr, "Error writing config file:", err)
 		os.Exit(1)
+	}
+
+	keys := make([]string, 0, len(utils.DefaultEndpoints))
+	for k := range utils.DefaultEndpoints {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		_, err := fmt.Fprintf(file, "%s_endpoint = %q\n%s_local_file = \"\"\n\n", k, utils.DefaultEndpoints[k], k)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error writing config file:", err)
+			os.Exit(1)
+		}
 	}
 }

@@ -3,7 +3,6 @@ module github.com/kaumnen/cipr
 go 1.26
 
 require (
-	github.com/BurntSushi/toml v1.6.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
