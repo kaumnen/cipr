@@ -1,0 +1,51 @@
+{
+  "cloud": "Public",
+  "changeNumber": 99,
+  "values": [
+    {
+      "name": "ActionGroup",
+      "id": "ActionGroup",
+      "properties": {
+        "changeNumber": 1,
+        "region": "",
+        "regionId": 0,
+        "platform": "Azure",
+        "systemService": "ActionGroup",
+        "addressPrefixes": [
+          "13.66.143.220/30",
+          "2603:1000:4::10c/126"
+        ]
+      }
+    },
+    {
+      "name": "Storage.WestEurope",
+      "id": "Storage.WestEurope",
+      "properties": {
+        "changeNumber": 5,
+        "region": "westeurope",
+        "regionId": 18,
+        "platform": "Azure",
+        "systemService": "AzureStorage",
+        "addressPrefixes": [
+          "20.50.32.0/19",
+          "2603:1020:206::/48"
+        ]
+      }
+    },
+    {
+      "name": "AzureCloud.eastus",
+      "id": "AzureCloud.eastus",
+      "properties": {
+        "changeNumber": 10,
+        "region": "eastus",
+        "regionId": 1,
+        "platform": "Azure",
+        "systemService": "",
+        "addressPrefixes": [
+          "20.42.0.0/15",
+          "20.55.0.0/16"
+        ]
+      }
+    }
+  ]
+}

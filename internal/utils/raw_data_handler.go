@@ -32,6 +32,9 @@ func GetRawData(ctx context.Context, source string) (string, error) {
 	default:
 		endpointURL = viper.GetString(source + "_endpoint")
 		localFile = viper.GetString(source + "_local_file")
+		if endpointURL == "" && localFile == "" {
+			endpointURL = DefaultEndpoints[source]
+		}
 	}
 
 	if localFile != "" {
