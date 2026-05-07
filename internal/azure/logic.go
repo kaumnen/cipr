@@ -64,11 +64,11 @@ const recoveryHint = "Workarounds: download the JSON from the page in a browser 
 
 func scrapeMissError(pageURL string, body []byte) error {
 	if len(body) < antiBotStubThreshold {
-		return fmt.Errorf("received anti-bot stub from %s (%d bytes) — "+
+		return fmt.Errorf("received anti-bot stub from %s (%d bytes); "+
 			"the User-Agent likely needs updating. %s",
 			pageURL, len(body), recoveryHint)
 	}
-	return fmt.Errorf("could not locate ServiceTags JSON URL on %s — "+
+	return fmt.Errorf("could not locate ServiceTags JSON URL on %s; "+
 		"page layout may have changed. %s", pageURL, recoveryHint)
 }
 
