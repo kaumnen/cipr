@@ -47,10 +47,12 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output (equivalent to --verbose-mode=full)")
 	rootCmd.PersistentFlags().String("verbose-mode", "none", "Verbosity level: none, mini, full. Overrides --verbose")
 	rootCmd.PersistentFlags().String("source", "hosted", "Custom data source for ip ranges (url or path). Must have https:// for urls.")
+	rootCmd.PersistentFlags().Bool("no-cache", false, "Bypass cache (skip read and write)")
 
 	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
 	viper.BindPFlag("verbose_mode", rootCmd.PersistentFlags().Lookup("verbose-mode"))
 	viper.BindPFlag("source", rootCmd.PersistentFlags().Lookup("source"))
+	viper.BindPFlag("no_cache", rootCmd.PersistentFlags().Lookup("no-cache"))
 }
 
 func initConfig() {
@@ -122,6 +124,9 @@ func createDefaultConfig(configPath string) {
 # the command line. For each provider:
 #   <provider>_endpoint   = URL fetched when --source=hosted (the default)
 #   <provider>_local_file = if set, read ranges from this path instead of the network
+#   <provider>_cache_ttl  = how long to reuse a cached hosted response. Go duration
+#                           string ("24h", "30m"). "0s" disables caching for this
+#                           provider; defaults to 24h if unset or unparseable.
 
 `
 	if _, err := fmt.Fprint(file, header); err != nil {
@@ -136,7 +141,7 @@ func createDefaultConfig(configPath string) {
 	sort.Strings(keys)
 
 	for _, k := range keys {
-		_, err := fmt.Fprintf(file, "%s_endpoint = %q\n%s_local_file = \"\"\n\n", k, utils.DefaultEndpoints[k], k)
+		_, err := fmt.Fprintf(file, "%s_endpoint = %q\n%s_local_file = \"\"\n%s_cache_ttl = \"24h\"\n\n", k, utils.DefaultEndpoints[k], k, k)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Error writing config file:", err)
 			os.Exit(1)

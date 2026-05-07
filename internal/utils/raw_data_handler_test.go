@@ -85,6 +85,7 @@ func TestGetRawData_LocalPath(t *testing.T) {
 }
 
 func TestGetRawData_ViperKey(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Cleanup(func() { viper.Reset() })
 
 	body := "from-viper-key"
@@ -105,4 +106,135 @@ func TestGetRawData_NoSource(t *testing.T) {
 
 	_, err := GetRawData(context.Background(), "unknown-key")
 	assert.Error(t, err)
+}
+
+func TestGetRawData_CacheHitWithinTTL(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Cleanup(func() { viper.Reset() })
+
+	var hits int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		_, _ = w.Write([]byte("payload"))
+	}))
+	defer srv.Close()
+
+	viper.Set("cachetest_endpoint", srv.URL)
+	viper.Set("cachetest_cache_ttl", "1h")
+
+	for i := 0; i < 2; i++ {
+		got, err := GetRawData(context.Background(), "cachetest")
+		assert.NoError(t, err)
+		assert.Equal(t, "payload", got)
+	}
+	assert.Equal(t, 1, hits, "second call should hit cache, not server")
+}
+
+func TestGetRawData_NoCacheBypass(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Cleanup(func() { viper.Reset() })
+
+	var hits int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		_, _ = w.Write([]byte("payload"))
+	}))
+	defer srv.Close()
+
+	viper.Set("cachetest_endpoint", srv.URL)
+	viper.Set("no_cache", true)
+
+	for i := 0; i < 2; i++ {
+		_, err := GetRawData(context.Background(), "cachetest")
+		assert.NoError(t, err)
+	}
+	assert.Equal(t, 2, hits, "--no-cache should skip cache reads")
+
+	path, err := cachePath("cachetest")
+	assert.NoError(t, err)
+	_, statErr := os.Stat(path)
+	assert.True(t, os.IsNotExist(statErr), "--no-cache should skip cache writes")
+}
+
+func TestGetRawData_LocalFileSkipsCache(t *testing.T) {
+	cacheHome := t.TempDir()
+	t.Setenv("XDG_CACHE_HOME", cacheHome)
+	t.Cleanup(func() { viper.Reset() })
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "ranges.txt")
+	if err := os.WriteFile(path, []byte("local"), 0o644); err != nil {
+		t.Fatalf("write fixture: %v", err)
+	}
+
+	viper.Set("cachetest_local_file", path)
+
+	got, err := GetRawData(context.Background(), "cachetest")
+	assert.NoError(t, err)
+	assert.Equal(t, "local", got)
+
+	cp, err := cachePath("cachetest")
+	assert.NoError(t, err)
+	_, statErr := os.Stat(cp)
+	assert.True(t, os.IsNotExist(statErr), "local-file source should not write cache")
+}
+
+func TestGetRawData_RawURLSkipsCache(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Cleanup(func() { viper.Reset() })
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("body"))
+	}))
+	defer srv.Close()
+
+	_, err := GetRawData(context.Background(), srv.URL)
+	assert.NoError(t, err)
+
+	dir, err := cacheDir()
+	assert.NoError(t, err)
+	entries, _ := os.ReadDir(dir)
+	assert.Empty(t, entries, "raw URL source should not write any cache file")
+}
+
+func TestGetRawData_TTLZeroAlwaysFetches(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Cleanup(func() { viper.Reset() })
+
+	var hits int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		_, _ = w.Write([]byte("payload"))
+	}))
+	defer srv.Close()
+
+	viper.Set("cachetest_endpoint", srv.URL)
+	viper.Set("cachetest_cache_ttl", "0s")
+
+	for i := 0; i < 2; i++ {
+		_, err := GetRawData(context.Background(), "cachetest")
+		assert.NoError(t, err)
+	}
+	assert.Equal(t, 2, hits, "ttl=0 should refetch every call")
+}
+
+func TestGetRawData_BadTTLFallsBack(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Cleanup(func() { viper.Reset() })
+
+	var hits int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		_, _ = w.Write([]byte("payload"))
+	}))
+	defer srv.Close()
+
+	viper.Set("cachetest_endpoint", srv.URL)
+	viper.Set("cachetest_cache_ttl", "garbage")
+
+	for i := 0; i < 2; i++ {
+		_, err := GetRawData(context.Background(), "cachetest")
+		assert.NoError(t, err)
+	}
+	assert.Equal(t, 1, hits, "unparseable TTL should fall back to default and still cache")
 }
