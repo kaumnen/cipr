@@ -119,8 +119,11 @@ func printListedValues(prefixes []Prefix, dim string) error {
 // fetchRawData mirrors utils.GetRawData's source dispatch but adds a
 // browser-UA scrape step when the resolved endpoint is the Microsoft
 // details.aspx page (Microsoft serves an anti-bot stub to non-browser UAs).
+// Hosted runs go through utils.GetCached so the resolved JSON gets cached
+// under the "azure" key — without that wrapper the scrape+download URL
+// path would refetch on every invocation (raw URLs aren't cached).
 func fetchRawData(ctx context.Context, source string) (string, error) {
-	var endpointURL string
+	var endpointURL, cacheKey string
 	switch {
 	case strings.HasPrefix(source, "https://") || strings.HasPrefix(source, "http://"):
 		endpointURL = source
@@ -134,21 +137,23 @@ func fetchRawData(ctx context.Context, source string) (string, error) {
 		if endpointURL == "" {
 			endpointURL = utils.DefaultEndpoints[source]
 		}
+		cacheKey = source
 	}
 
 	if endpointURL == "" {
 		return utils.GetRawData(ctx, source)
 	}
 
-	if strings.HasSuffix(strings.ToLower(endpointURL), ".json") {
-		return utils.GetRawData(ctx, endpointURL)
-	}
-
-	jsonURL, err := scrapeJSONURL(ctx, endpointURL)
-	if err != nil {
-		return "", err
-	}
-	return utils.GetRawData(ctx, jsonURL)
+	return utils.GetCached(ctx, cacheKey, func(ctx context.Context) (string, error) {
+		if strings.HasSuffix(strings.ToLower(endpointURL), ".json") {
+			return utils.GetRawData(ctx, endpointURL)
+		}
+		jsonURL, err := scrapeJSONURL(ctx, endpointURL)
+		if err != nil {
+			return "", err
+		}
+		return utils.GetRawData(ctx, jsonURL)
+	})
 }
 
 func scrapeJSONURL(ctx context.Context, pageURL string) (string, error) {

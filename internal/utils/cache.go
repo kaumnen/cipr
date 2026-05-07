@@ -1,12 +1,54 @@
 package utils
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/spf13/viper"
 )
+
+// GetCached wraps fetch with the standard cache-aside policy: read on hit,
+// run fetch on miss, write the result. If key is "" or --no-cache is set,
+// fetch runs unconditionally and the cache is left untouched. Cache write
+// failures are logged but never fatal. Suitable for providers (e.g. azure)
+// whose fetch path doesn't reduce to a single utils.GetRawData call.
+func GetCached(ctx context.Context, key string, fetch func(context.Context) (string, error)) (string, error) {
+	if key == "" || viper.GetBool("no_cache") {
+		return fetch(ctx)
+	}
+	ttl := resolveCacheTTL(key)
+	if ttl > 0 {
+		if data, ok, _ := readCache(key, ttl); ok {
+			fmt.Fprintf(os.Stderr, "Using cached IP ranges for %s (age %s)\n", key, cacheAge(key))
+			return string(data), nil
+		}
+	}
+	body, err := fetch(ctx)
+	if err != nil {
+		return "", err
+	}
+	if werr := writeCache(key, []byte(body)); werr != nil {
+		fmt.Fprintln(os.Stderr, "Warning: cache write failed:", werr)
+	}
+	return body, nil
+}
+
+func resolveCacheTTL(key string) time.Duration {
+	raw := viper.GetString(key + "_cache_ttl")
+	if raw == "" {
+		return defaultCacheTTL
+	}
+	ttl, err := time.ParseDuration(raw)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: invalid %s_cache_ttl=%q, using %s\n", key, raw, defaultCacheTTL)
+		return defaultCacheTTL
+	}
+	return ttl
+}
 
 func cacheDir() (string, error) {
 	if dir := os.Getenv("XDG_CACHE_HOME"); dir != "" {

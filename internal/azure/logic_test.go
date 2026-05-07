@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -299,4 +302,58 @@ func TestGetIPRanges_List(t *testing.T) {
 		require.NoError(t, GetIPRanges(context.Background(), cfg))
 	})
 	assert.Equal(t, "ActionGroup\nAzureStorage\n", out)
+}
+
+// Regression: azure's two-stage hosted fetch (HTML scrape -> JSON download)
+// previously bypassed the cache because both steps reduced to raw URL calls
+// that GetRawData doesn't cache. Verify the cache wrap now keys the resolved
+// JSON under "azure" so a second call within TTL returns from disk.
+func TestFetchRawData_HostedCachesUnderAzureKey(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Cleanup(func() { viper.Reset() })
+
+	jsonBody := loadFixture(t)
+
+	var hits int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		_, _ = w.Write([]byte(jsonBody))
+	}))
+	defer srv.Close()
+
+	// Point at a .json endpoint to skip the page-scrape branch (HTTP-redirecting
+	// download.microsoft.com URLs into a test server is more trouble than it's
+	// worth here). What we're proving is that fetchRawData wraps its inner
+	// work in GetCached at all — the scrape branch shares the same wrapper.
+	viper.Set("azure_endpoint", srv.URL+"/ServiceTags_Public_20260101.json")
+
+	for i := 0; i < 2; i++ {
+		got, err := fetchRawData(context.Background(), "azure")
+		require.NoError(t, err)
+		assert.Equal(t, jsonBody, got)
+	}
+	assert.Equal(t, 1, hits, "second call should hit cache, not refetch")
+}
+
+func TestFetchRawData_NoCacheBypass(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+	t.Cleanup(func() { viper.Reset() })
+
+	jsonBody := loadFixture(t)
+
+	var hits int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		_, _ = w.Write([]byte(jsonBody))
+	}))
+	defer srv.Close()
+
+	viper.Set("azure_endpoint", srv.URL+"/x.json")
+	viper.Set("no_cache", true)
+
+	for i := 0; i < 2; i++ {
+		_, err := fetchRawData(context.Background(), "azure")
+		require.NoError(t, err)
+	}
+	assert.Equal(t, 2, hits, "--no-cache should refetch every call")
 }

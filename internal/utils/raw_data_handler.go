@@ -37,7 +37,7 @@ func GetRawData(ctx context.Context, source string) (string, error) {
 		if endpointURL == "" && localFile == "" {
 			endpointURL = DefaultEndpoints[source]
 		}
-		if localFile == "" && !viper.GetBool("no_cache") {
+		if localFile == "" {
 			cacheKey = source
 		}
 	}
@@ -51,41 +51,10 @@ func GetRawData(ctx context.Context, source string) (string, error) {
 		return "", fmt.Errorf("no endpoint URL or local file specified for source %q", source)
 	}
 
-	if cacheKey != "" {
-		ttl := resolveCacheTTL(cacheKey)
-		if ttl > 0 {
-			if data, ok, _ := readCache(cacheKey, ttl); ok {
-				fmt.Fprintf(os.Stderr, "Using cached IP ranges for %s (age %s)\n", cacheKey, cacheAge(cacheKey))
-				return string(data), nil
-			}
-		}
-	}
-
-	fmt.Fprintln(os.Stderr, "Fetching IP ranges from endpoint:", endpointURL)
-	body, err := loadFromEndpoint(ctx, endpointURL)
-	if err != nil {
-		return "", err
-	}
-
-	if cacheKey != "" {
-		if werr := writeCache(cacheKey, []byte(body)); werr != nil {
-			fmt.Fprintln(os.Stderr, "Warning: cache write failed:", werr)
-		}
-	}
-	return body, nil
-}
-
-func resolveCacheTTL(key string) time.Duration {
-	raw := viper.GetString(key + "_cache_ttl")
-	if raw == "" {
-		return defaultCacheTTL
-	}
-	ttl, err := time.ParseDuration(raw)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: invalid %s_cache_ttl=%q, using %s\n", key, raw, defaultCacheTTL)
-		return defaultCacheTTL
-	}
-	return ttl
+	return GetCached(ctx, cacheKey, func(ctx context.Context) (string, error) {
+		fmt.Fprintln(os.Stderr, "Fetching IP ranges from endpoint:", endpointURL)
+		return loadFromEndpoint(ctx, endpointURL)
+	})
 }
 
 func loadFromFile(filePath string) (string, error) {
