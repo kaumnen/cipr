@@ -26,6 +26,7 @@ type Config struct {
 	Source    string
 	IPType    string
 	Filters   Filters
+	List      string
 	Verbosity string
 }
 
@@ -38,7 +39,39 @@ func GetIPRanges(ctx context.Context, config Config) error {
 	if err != nil {
 		return err
 	}
-	printIPRanges(filtrateIPRanges(ipRanges, config), config.Verbosity)
+	filtered := filtrateIPRanges(ipRanges, config)
+	if config.List != "" {
+		return printListedValues(filtered, config.List)
+	}
+	printIPRanges(filtered, config.Verbosity)
+	return nil
+}
+
+func printListedValues(ranges []IPRange, dim string) error {
+	var get func(IPRange) string
+	switch dim {
+	case "countries":
+		get = func(r IPRange) string { return r.Country }
+	case "regions":
+		get = func(r IPRange) string { return r.Region }
+	case "cities":
+		get = func(r IPRange) string { return r.City }
+	default:
+		return fmt.Errorf("unknown list dimension %q (valid: countries, regions, cities)", dim)
+	}
+
+	values := make([]string, 0, len(ranges))
+	for _, r := range ranges {
+		values = append(values, get(r))
+	}
+	values = utils.DedupeSorted(values)
+	if len(values) == 0 {
+		fmt.Println("No values to display.")
+		return nil
+	}
+	for _, v := range values {
+		fmt.Println(v)
+	}
 	return nil
 }
 

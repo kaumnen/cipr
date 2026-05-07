@@ -51,6 +51,7 @@ type Config struct {
 	Source    string
 	IPType    string
 	Filter    string
+	List      string
 	Verbosity string
 }
 
@@ -65,7 +66,38 @@ func GetIPRanges(ctx context.Context, config Config) error {
 	if err != nil {
 		return err
 	}
+	if config.List != "" {
+		return printListedValues(readyIPs, config.List)
+	}
 	printIPRanges(readyIPs, config.Verbosity)
+	return nil
+}
+
+func printListedValues(prefixes []IPPrefix, dim string) error {
+	var get func(IPPrefix) string
+	switch dim {
+	case "regions":
+		get = IPPrefix.GetRegion
+	case "services":
+		get = IPPrefix.GetService
+	case "network-border-groups":
+		get = IPPrefix.GetNetworkBorderGroup
+	default:
+		return fmt.Errorf("unknown list dimension %q (valid: regions, services, network-border-groups)", dim)
+	}
+
+	values := make([]string, 0, len(prefixes))
+	for _, p := range prefixes {
+		values = append(values, get(p))
+	}
+	values = utils.DedupeSorted(values)
+	if len(values) == 0 {
+		fmt.Println("No values to display.")
+		return nil
+	}
+	for _, v := range values {
+		fmt.Println(v)
+	}
 	return nil
 }
 
@@ -101,11 +133,12 @@ func filtrateIPRanges(rawData, ipType string, filterSlice []string) ([]IPPrefix,
 	}
 
 	var prefixes []IPPrefix
-	if ipType == "ipv4" {
+	if ipType == "ipv4" || ipType == "" {
 		for _, prefix := range data.Prefixes {
 			prefixes = append(prefixes, prefix)
 		}
-	} else if ipType == "ipv6" {
+	}
+	if ipType == "ipv6" || ipType == "" {
 		for _, prefix := range data.IPv6Prefixes {
 			prefixes = append(prefixes, prefix)
 		}

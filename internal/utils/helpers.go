@@ -2,6 +2,7 @@ package utils
 
 import (
 	"net/netip"
+	"sort"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -60,4 +61,23 @@ func IsIPv4(s string) bool {
 func IsIPv6(s string) bool {
 	addr := parseIP(s)
 	return addr.IsValid() && addr.Is6()
+}
+
+// DedupeSorted returns the input with empty entries dropped and the
+// remaining values deduplicated and sorted ascending.
+func DedupeSorted(in []string) []string {
+	seen := make(map[string]struct{}, len(in))
+	out := make([]string, 0, len(in))
+	for _, v := range in {
+		if v == "" {
+			continue
+		}
+		if _, ok := seen[v]; ok {
+			continue
+		}
+		seen[v] = struct{}{}
+		out = append(out, v)
+	}
+	sort.Strings(out)
+	return out
 }

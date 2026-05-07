@@ -3,6 +3,8 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/kaumnen/cipr/internal/aws"
 	"github.com/kaumnen/cipr/internal/utils"
@@ -45,6 +47,20 @@ var awsCmd = &cobra.Command{
 		}
 
 		source := utils.ResolveSource("aws")
+
+		if list := viper.GetString("aws-list"); list != "" {
+			if !slices.Contains(awsListDimensions, list) {
+				return fmt.Errorf("invalid --list value %q (valid: %s)", list, strings.Join(awsListDimensions, ", "))
+			}
+			return aws.GetIPRanges(cmd.Context(), aws.Config{
+				Source:    source,
+				IPType:    "",
+				Filter:    awsFilter,
+				List:      list,
+				Verbosity: verbosity,
+			})
+		}
+
 		for _, version := range ipVersion {
 			if err := aws.GetIPRanges(cmd.Context(), aws.Config{
 				Source:    source,
@@ -59,6 +75,8 @@ var awsCmd = &cobra.Command{
 	},
 }
 
+var awsListDimensions = []string{"regions", "services", "network-border-groups"}
+
 func init() {
 	rootCmd.AddCommand(awsCmd)
 
@@ -69,6 +87,7 @@ func init() {
 	awsCmd.Flags().String("filter-region", "", "Filter results by AWS region")
 	awsCmd.Flags().String("filter-service", "", "Filter results by AWS service")
 	awsCmd.Flags().String("filter-network-border-group", "", "Filter results by AWS network border group")
+	awsCmd.Flags().String("list", "", "List unique values for a dimension instead of IP ranges. Valid: regions, services, network-border-groups. Composes with --filter-* flags; ignores --ipv4/--ipv6.")
 
 	viper.BindPFlag("aws_ipv4", awsCmd.Flags().Lookup("ipv4"))
 	viper.BindPFlag("aws_ipv6", awsCmd.Flags().Lookup("ipv6"))
@@ -76,4 +95,5 @@ func init() {
 	viper.BindPFlag("aws-filter-region", awsCmd.Flags().Lookup("filter-region"))
 	viper.BindPFlag("aws-filter-service", awsCmd.Flags().Lookup("filter-service"))
 	viper.BindPFlag("aws-filter-network-border-group", awsCmd.Flags().Lookup("filter-network-border-group"))
+	viper.BindPFlag("aws-list", awsCmd.Flags().Lookup("list"))
 }

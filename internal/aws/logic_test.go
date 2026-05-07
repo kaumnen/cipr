@@ -2,11 +2,16 @@ package aws
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"os"
+	"path/filepath"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSeparateFilters(t *testing.T) {
@@ -160,5 +165,91 @@ func TestPrintIPRanges(t *testing.T) {
 
 			assert.Equal(t, tc.expectedOutput, output, "Output mismatch for test case: %s", tc.name)
 		})
+	}
+}
+
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+	os.Stdout = w
+
+	fn()
+
+	w.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+	return buf.String()
+}
+
+func TestPrintListedValues(t *testing.T) {
+	prefixes := []IPPrefix{
+		IPv4Prefix{Region: "us-east-1", Service: "EC2", NetworkBorderGroup: "us-east-1"},
+		IPv4Prefix{Region: "us-east-1", Service: "S3", NetworkBorderGroup: "us-east-1"},
+		IPv6Prefix{Region: "eu-west-1", Service: "EC2", NetworkBorderGroup: "eu-west-1"},
+		IPv4Prefix{Region: "", Service: "AMAZON", NetworkBorderGroup: ""},
+	}
+
+	t.Run("regions sorted and deduped", func(t *testing.T) {
+		out := captureStdout(t, func() {
+			require.NoError(t, printListedValues(prefixes, "regions"))
+		})
+		assert.Equal(t, "eu-west-1\nus-east-1\n", out)
+	})
+
+	t.Run("services sorted and deduped", func(t *testing.T) {
+		out := captureStdout(t, func() {
+			require.NoError(t, printListedValues(prefixes, "services"))
+		})
+		assert.Equal(t, "AMAZON\nEC2\nS3\n", out)
+	})
+
+	t.Run("network-border-groups sorted and deduped", func(t *testing.T) {
+		out := captureStdout(t, func() {
+			require.NoError(t, printListedValues(prefixes, "network-border-groups"))
+		})
+		assert.Equal(t, "eu-west-1\nus-east-1\n", out)
+	})
+
+	t.Run("empty input prints placeholder", func(t *testing.T) {
+		out := captureStdout(t, func() {
+			require.NoError(t, printListedValues(nil, "regions"))
+		})
+		assert.Equal(t, "No values to display.\n", out)
+	})
+
+	t.Run("unknown dim returns error", func(t *testing.T) {
+		err := printListedValues(prefixes, "bogus")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "unknown list dimension")
+	})
+}
+
+func TestGetIPRanges_List(t *testing.T) {
+	cfg := Config{
+		Source:    filepath.Join("..", "testdata", "mock_ip_ranges_response.json"),
+		IPType:    "",
+		Filter:    "",
+		List:      "regions",
+		Verbosity: "none",
+	}
+
+	out := captureStdout(t, func() {
+		require.NoError(t, GetIPRanges(context.Background(), cfg))
+	})
+
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	require.NotEmpty(t, lines)
+	assert.True(t, sort.StringsAreSorted(lines), "regions output not sorted: %v", lines)
+
+	seen := make(map[string]struct{})
+	for _, l := range lines {
+		assert.NotEmpty(t, l, "empty region surfaced")
+		_, dup := seen[l]
+		assert.False(t, dup, "duplicate region %q", l)
+		seen[l] = struct{}{}
 	}
 }
