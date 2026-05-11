@@ -17,6 +17,7 @@ var DefaultEndpoints = map[string]string{
 	"cloudflare_ipv6": "https://www.cloudflare.com/ips-v6/",
 	"icloud":          "https://mask-api.icloud.com/egress-ip-ranges.csv",
 	"digitalocean":    "https://digitalocean.com/geo/google.csv",
+	"github":          "https://api.github.com/meta",
 }
 
 // ResolveSource returns the source token to pass to GetRawData. When the

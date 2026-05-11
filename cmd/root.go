@@ -21,7 +21,7 @@ var rootCmd = &cobra.Command{
 	Version: version,
 	Short:   "Retrieve IP ranges from cloud providers and services",
 	Long: `cipr is a CLI tool for retrieving IP ranges from various cloud providers
-and services (AWS, Cloudflare, DigitalOcean, iCloud Private Relay).
+and services (AWS, Azure, Cloudflare, DigitalOcean, GitHub, iCloud Private Relay).
 
 It provides a quick and efficient way to access up-to-date IP ranges, useful
 for network administrators, security professionals, and developers working
