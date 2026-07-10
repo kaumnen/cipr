@@ -16,19 +16,16 @@ var awsCmd = &cobra.Command{
 	Use:   "aws",
 	Short: "Get AWS IP ranges.",
 	Long:  `Get AWS IPv4 and IPv6 ranges with optional filtering.`,
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		verbosity := resolveVerbosity(cmd)
+		verbosity, err := resolveVerbosity(cmd)
+		if err != nil {
+			return err
+		}
 
 		ipv4 := viper.GetBool("aws_ipv4")
 		ipv6 := viper.GetBool("aws_ipv6")
-		both := !ipv4 && !ipv6
-		var ipVersion []string
-		if ipv4 || both {
-			ipVersion = append(ipVersion, "ipv4")
-		}
-		if ipv6 || both {
-			ipVersion = append(ipVersion, "ipv6")
-		}
+		ipType := resolveIPType(ipv4, ipv6)
 
 		filter := viper.GetString("aws-filter")
 		filterRegion := viper.GetString("aws-filter-region")
@@ -61,17 +58,9 @@ var awsCmd = &cobra.Command{
 			})
 		}
 
-		for _, version := range ipVersion {
-			if err := aws.GetIPRanges(cmd.Context(), aws.Config{
-				Source:    source,
-				IPType:    version,
-				Filter:    awsFilter,
-				Verbosity: verbosity,
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
+		return aws.GetIPRanges(cmd.Context(), aws.Config{
+			Source: source, IPType: ipType, Filter: awsFilter, Verbosity: verbosity,
+		})
 	},
 }
 

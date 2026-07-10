@@ -15,19 +15,16 @@ var doCmd = &cobra.Command{
 	Use:   "do",
 	Short: "Get Digital Ocean IP ranges",
 	Long:  `Retrieve Digital Ocean IPv4 and IPv6 ranges with optional verbosity levels.`,
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		verbosity := resolveVerbosity(cmd)
+		verbosity, err := resolveVerbosity(cmd)
+		if err != nil {
+			return err
+		}
 
 		ipv4 := viper.GetBool("do_ipv4")
 		ipv6 := viper.GetBool("do_ipv6")
-		both := !ipv4 && !ipv6
-		var ipVersions []string
-		if ipv4 || both {
-			ipVersions = append(ipVersions, "ipv4")
-		}
-		if ipv6 || both {
-			ipVersions = append(ipVersions, "ipv6")
-		}
+		ipType := resolveIPType(ipv4, ipv6)
 
 		source := utils.ResolveSource("digitalocean")
 		filters := digitalocean.Filters{
@@ -50,17 +47,9 @@ var doCmd = &cobra.Command{
 			})
 		}
 
-		for _, version := range ipVersions {
-			if err := digitalocean.GetIPRanges(cmd.Context(), digitalocean.Config{
-				Source:    source,
-				IPType:    version,
-				Filters:   filters,
-				Verbosity: verbosity,
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
+		return digitalocean.GetIPRanges(cmd.Context(), digitalocean.Config{
+			Source: source, IPType: ipType, Filters: filters, Verbosity: verbosity,
+		})
 	},
 }
 

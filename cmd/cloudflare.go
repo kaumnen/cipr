@@ -11,11 +11,20 @@ var cloudflareCmd = &cobra.Command{
 	Use:   "cloudflare",
 	Short: "Get Cloudflare IP ranges",
 	Long:  `Retrieve Cloudflare IPv4 and IPv6 ranges with optional verbosity levels.`,
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		verbosity := resolveVerbosity(cmd)
+		verbosity, err := resolveVerbosity(cmd)
+		if err != nil {
+			return err
+		}
 
 		ipv4 := viper.GetBool("cloudflare_ipv4")
 		ipv6 := viper.GetBool("cloudflare_ipv6")
+		if viper.GetString("source") != "hosted" {
+			return cloudflare.GetIPRanges(cmd.Context(), cloudflare.Config{
+				Source: utils.ResolveSource("cloudflare"), Verbosity: verbosity,
+			})
+		}
 		both := !ipv4 && !ipv6
 		var ipVersions []string
 		if ipv4 || both {

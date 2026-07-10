@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLoadFromFile(t *testing.T) {
@@ -28,6 +30,25 @@ func TestLoadFromFile(t *testing.T) {
 func TestLoadFromFile_Missing(t *testing.T) {
 	_, err := loadFromFile(filepath.Join(t.TempDir(), "does-not-exist"))
 	assert.Error(t, err)
+}
+
+func TestGetRawData_BareRelativePath(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+	require.NoError(t, os.WriteFile("ranges.csv", []byte("local"), 0o600))
+
+	got, err := GetRawData(context.Background(), "ranges.csv")
+	require.NoError(t, err)
+	assert.Equal(t, "local", got)
+}
+
+func TestReadAllLimited(t *testing.T) {
+	got, err := readAllLimited(bytes.NewBufferString("1234"), 4)
+	require.NoError(t, err)
+	assert.Equal(t, []byte("1234"), got)
+
+	_, err = readAllLimited(bytes.NewBufferString("12345"), 4)
+	require.Error(t, err)
 }
 
 func TestLoadFromEndpoint_OK(t *testing.T) {
