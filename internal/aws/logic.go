@@ -131,6 +131,19 @@ func filtrateIPRanges(rawData, ipType string, filterSlice []string) ([]IPPrefix,
 	if err := json.Unmarshal([]byte(rawData), &data); err != nil {
 		return nil, fmt.Errorf("parse aws ip-ranges json: %w", err)
 	}
+	if len(data.Prefixes) == 0 && len(data.IPv6Prefixes) == 0 {
+		return nil, fmt.Errorf("validate aws ip-ranges json: no IP ranges found")
+	}
+	for i, prefix := range data.Prefixes {
+		if !utils.IsCIDR(prefix.IPAddress) {
+			return nil, fmt.Errorf("validate aws IPv4 prefix %d: %q is not a valid CIDR", i+1, prefix.IPAddress)
+		}
+	}
+	for i, prefix := range data.IPv6Prefixes {
+		if !utils.IsCIDR(prefix.IPv6Address) {
+			return nil, fmt.Errorf("validate aws IPv6 prefix %d: %q is not a valid CIDR", i+1, prefix.IPv6Address)
+		}
+	}
 
 	var prefixes []IPPrefix
 	if ipType == "ipv4" || ipType == "both" || ipType == "" {

@@ -30,13 +30,12 @@ func captureStdout(t *testing.T, fn func()) string {
 }
 
 func TestParseRecords(t *testing.T) {
-	t.Run("empty input yields no records", func(t *testing.T) {
-		got, err := parseRecords("")
-		assert.NoError(t, err)
-		assert.Empty(t, got)
+	t.Run("empty input is rejected", func(t *testing.T) {
+		_, err := parseRecords("")
+		assert.ErrorContains(t, err, "no IP ranges found")
 	})
 
-	t.Run("trims whitespace and tolerates partial columns", func(t *testing.T) {
+	t.Run("trims whitespace and tolerates optional metadata columns", func(t *testing.T) {
 		input := "172.224.224.0/27, GB , GB-EN , London\n2a02:26f7::/64,US,US-NY\n3.3.3.0/24,US\n4.4.4.0/24\n"
 		got, err := parseRecords(input)
 		require.NoError(t, err)
@@ -46,6 +45,11 @@ func TestParseRecords(t *testing.T) {
 			{IPRange: "3.3.3.0/24", Country: "US"},
 			{IPRange: "4.4.4.0/24"},
 		}, got)
+	})
+
+	t.Run("rejects invalid CIDR", func(t *testing.T) {
+		_, err := parseRecords("not-a-cidr,GB,GB-EN,London\n")
+		assert.ErrorContains(t, err, "row 1")
 	})
 
 	t.Run("propagates csv parse errors", func(t *testing.T) {

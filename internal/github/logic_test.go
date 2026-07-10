@@ -65,6 +65,29 @@ func TestParseMeta(t *testing.T) {
 	assert.Len(t, ranges, 32)
 }
 
+func TestParseMeta_Validation(t *testing.T) {
+	t.Run("malformed JSON", func(t *testing.T) {
+		_, err := parseMeta(`{`)
+		assert.ErrorContains(t, err, "parse github meta json")
+	})
+
+	t.Run("empty payload", func(t *testing.T) {
+		_, err := parseMeta(`{}`)
+		assert.ErrorContains(t, err, "no IP ranges found")
+	})
+
+	t.Run("invalid CIDR", func(t *testing.T) {
+		_, err := parseMeta(`{"web":["1.1.1.0/24","not-a-cidr"]}`)
+		assert.ErrorContains(t, err, `service "web" prefix 2`)
+	})
+
+	t.Run("unknown non-range metadata is ignored", func(t *testing.T) {
+		ranges, err := parseMeta(`{"web":["1.1.1.0/24"],"future_metadata":{"enabled":true}}`)
+		require.NoError(t, err)
+		assert.Equal(t, []IPRange{{CIDR: "1.1.1.0/24", Service: "web"}}, ranges)
+	})
+}
+
 func TestFiltrate(t *testing.T) {
 	raw := mockGetReq()
 	ranges, err := parseMeta(raw)

@@ -128,7 +128,7 @@ func fetchRawData(ctx context.Context, source string) (string, error) {
 	switch {
 	case strings.HasPrefix(source, "https://") || strings.HasPrefix(source, "http://"):
 		endpointURL = source
-	case source == "azure" || viper.IsSet(source+"_endpoint") || viper.IsSet(source+"_local_file"):
+	case utils.IsConfiguredSource(source):
 		if lf := viper.GetString(source + "_local_file"); lf != "" {
 			return utils.GetRawData(ctx, source)
 		}
@@ -143,6 +143,9 @@ func fetchRawData(ctx context.Context, source string) (string, error) {
 
 	if endpointURL == "" {
 		return utils.GetRawData(ctx, source)
+	}
+	if err := utils.ValidateHTTPURL(endpointURL); err != nil {
+		return "", fmt.Errorf("invalid endpoint for source %q: %w", source, err)
 	}
 
 	return utils.GetCached(ctx, cacheKey, func(ctx context.Context) (string, error) {
@@ -217,6 +220,19 @@ func filtrateIPRanges(raw, ipType string, filterSlice []string) ([]Prefix, error
 	var data rawData
 	if err := json.Unmarshal([]byte(raw), &data); err != nil {
 		return nil, fmt.Errorf("parse azure service-tags json: %w", err)
+	}
+
+	totalPrefixes := 0
+	for _, v := range data.Values {
+		for i, addr := range v.Properties.AddressPrefixes {
+			totalPrefixes++
+			if !utils.IsCIDR(addr) {
+				return nil, fmt.Errorf("validate azure service %q prefix %d: %q is not a valid CIDR", v.Name, i+1, addr)
+			}
+		}
+	}
+	if totalPrefixes == 0 {
+		return nil, fmt.Errorf("validate azure service-tags json: no IP ranges found")
 	}
 
 	var result []Prefix

@@ -99,6 +99,25 @@ func TestFiltrateIPRanges(t *testing.T) {
 	}
 }
 
+func TestFiltrateIPRanges_Validation(t *testing.T) {
+	tests := []struct {
+		name string
+		raw  string
+		want string
+	}{
+		{name: "malformed JSON", raw: `{`, want: "parse aws"},
+		{name: "empty payload", raw: `{}`, want: "no IP ranges found"},
+		{name: "invalid CIDR", raw: `{"prefixes":[{"ip_prefix":"not-a-cidr"}]}`, want: "IPv4 prefix 1"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := filtrateIPRanges(tt.raw, "ipv4", []string{"*", "*", "*"})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.want)
+		})
+	}
+}
+
 func TestPrintIPRanges(t *testing.T) {
 	testCases := []struct {
 		name           string
