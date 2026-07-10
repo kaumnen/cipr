@@ -1,9 +1,12 @@
 package digitalocean
 
 import (
+	"bufio"
 	"context"
 	"encoding/csv"
 	"fmt"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/kaumnen/cipr/internal/utils"
@@ -83,13 +86,15 @@ func parseRecords(rawData string) ([]IPRange, error) {
 	r := csv.NewReader(strings.NewReader(rawData))
 	r.FieldsPerRecord = -1
 
-	records, err := r.ReadAll()
-	if err != nil {
-		return nil, fmt.Errorf("parse digitalocean csv: %w", err)
-	}
-
 	var ipRanges []IPRange
-	for _, record := range records {
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("parse digitalocean csv: %w", err)
+		}
 		ipRange := IPRange{}
 		if len(record) > 0 {
 			ipRange.IPRange = strings.TrimSpace(record[0])
@@ -146,26 +151,28 @@ func printIPRanges(ipRanges []IPRange, verbosity string) {
 		return
 	}
 
+	w := bufio.NewWriter(os.Stdout)
+	defer func() { _ = w.Flush() }()
 	var printFunc func(IPRange)
 
 	switch verbosity {
 	case "none":
 		printFunc = func(ip IPRange) {
-			fmt.Println(ip.IPRange)
+			_, _ = fmt.Fprintln(w, ip.IPRange)
 		}
 	case "mini":
 		printFunc = func(ip IPRange) {
-			fmt.Printf("%s,%s,%s,%s,%s\n",
+			_, _ = fmt.Fprintf(w, "%s,%s,%s,%s,%s\n",
 				ip.IPRange, ip.Country, ip.Region, ip.City, ip.Zip)
 		}
 	case "full":
 		printFunc = func(ip IPRange) {
-			fmt.Printf("IP Range: %s, Country: %s, Region: %s, City: %s, ZIP: %s\n",
+			_, _ = fmt.Fprintf(w, "IP Range: %s, Country: %s, Region: %s, City: %s, ZIP: %s\n",
 				ip.IPRange, ip.Country, ip.Region, ip.City, ip.Zip)
 		}
 	default:
 		printFunc = func(ip IPRange) {
-			fmt.Println(ip.IPRange)
+			_, _ = fmt.Fprintln(w, ip.IPRange)
 		}
 	}
 

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/kaumnen/cipr/internal/utils"
 	"github.com/spf13/cobra"
@@ -17,9 +18,13 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:     "cipr",
-	Version: version,
-	Short:   "Retrieve IP ranges from cloud providers and services",
+	Use:          "cipr",
+	Version:      version,
+	Short:        "Retrieve IP ranges from cloud providers and services",
+	SilenceUsage: true,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		return initConfig()
+	},
 	Long: `cipr is a CLI tool for retrieving IP ranges from various cloud providers
 and services (AWS, Azure, Cloudflare, DigitalOcean, GitHub, iCloud Private Relay).
 
@@ -36,8 +41,6 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
 	if version != "" {
 		utils.UserAgent = "cipr/" + version
 	}
@@ -53,9 +56,10 @@ func init() {
 	viper.BindPFlag("verbose_mode", rootCmd.PersistentFlags().Lookup("verbose-mode"))
 	viper.BindPFlag("source", rootCmd.PersistentFlags().Lookup("source"))
 	viper.BindPFlag("no_cache", rootCmd.PersistentFlags().Lookup("no-cache"))
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 }
 
-func initConfig() {
+func initConfig() error {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
@@ -67,33 +71,49 @@ func initConfig() {
 		viper.SetConfigType("toml")
 
 		if _, err := os.Stat(configPath); os.IsNotExist(err) {
-			createDefaultConfig(configPath)
+			if err := createDefaultConfig(configPath); err != nil {
+				return err
+			}
+		} else if err != nil {
+			return fmt.Errorf("inspect config file: %w", err)
 		}
 	}
 
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Fprintln(os.Stderr, "Error reading config file:", err)
+		return fmt.Errorf("read config file: %w", err)
 	}
+	return nil
 }
 
-func resolveVerbosity(cmd *cobra.Command) string {
+func resolveVerbosity(cmd *cobra.Command) (string, error) {
 	var verbosity string
 	switch {
 	case cmd.Flags().Changed("verbose-mode"):
-		verbosity = viper.GetString("verbose_mode")
-	case viper.GetBool("verbose"):
-		verbosity = "full"
+		verbosity, _ = cmd.Flags().GetString("verbose-mode")
+	case cmd.Flags().Changed("verbose"):
+		enabled, _ := cmd.Flags().GetBool("verbose")
+		if enabled {
+			verbosity = "full"
+		} else {
+			verbosity = "none"
+		}
 	default:
-		verbosity = "none"
+		verbosity = viper.GetString("verbose_mode")
+		if verbosity == "" || verbosity == "none" && viper.GetBool("verbose") {
+			if viper.GetBool("verbose") {
+				verbosity = "full"
+			} else {
+				verbosity = "none"
+			}
+		}
 	}
 
 	if !isValidVerbosity(verbosity) {
-		fmt.Fprintf(os.Stderr, "Invalid verbosity level: %s. Allowed values are: none, mini, full.\n", verbosity)
-		os.Exit(1)
+		return "", fmt.Errorf("invalid verbosity level %q (allowed: none, mini, full)", verbosity)
 	}
-	return verbosity
+	return verbosity, nil
 }
 
 func isValidVerbosity(v string) bool {
@@ -104,21 +124,19 @@ func isValidVerbosity(v string) bool {
 	return false
 }
 
-func createDefaultConfig(configPath string) {
+func createDefaultConfig(configPath string) error {
 	dir := filepath.Dir(configPath)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			fmt.Fprintln(os.Stderr, "Error creating config directory:", err)
-			os.Exit(1)
+			return fmt.Errorf("create config directory: %w", err)
 		}
 	}
 
-	file, err := os.Create(configPath)
+	file, err := os.OpenFile(configPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error creating config file:", err)
-		os.Exit(1)
+		return fmt.Errorf("create config file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	const header = `# cipr config. Override per-provider data sources here, or pass --source on
 # the command line. For each provider:
@@ -130,8 +148,7 @@ func createDefaultConfig(configPath string) {
 
 `
 	if _, err := fmt.Fprint(file, header); err != nil {
-		fmt.Fprintln(os.Stderr, "Error writing config file:", err)
-		os.Exit(1)
+		return fmt.Errorf("write config file: %w", err)
 	}
 
 	keys := make([]string, 0, len(utils.DefaultEndpoints))
@@ -143,8 +160,19 @@ func createDefaultConfig(configPath string) {
 	for _, k := range keys {
 		_, err := fmt.Fprintf(file, "%s_endpoint = %q\n%s_local_file = \"\"\n%s_cache_ttl = \"24h\"\n\n", k, utils.DefaultEndpoints[k], k, k)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error writing config file:", err)
-			os.Exit(1)
+			return fmt.Errorf("write config file: %w", err)
 		}
+	}
+	return file.Close()
+}
+
+func resolveIPType(ipv4, ipv6 bool) string {
+	switch {
+	case ipv4 && !ipv6:
+		return "ipv4"
+	case ipv6 && !ipv4:
+		return "ipv6"
+	default:
+		return "both"
 	}
 }

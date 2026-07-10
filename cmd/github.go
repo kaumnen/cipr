@@ -15,8 +15,12 @@ var githubCmd = &cobra.Command{
 	Use:   "github",
 	Short: "Get GitHub IP ranges.",
 	Long:  `Get GitHub IPv4 and IPv6 ranges with optional service filtering.`,
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		verbosity := resolveVerbosity(cmd)
+		verbosity, err := resolveVerbosity(cmd)
+		if err != nil {
+			return err
+		}
 
 		ipv4 := viper.GetBool("github_ipv4")
 		ipv6 := viper.GetBool("github_ipv6")
