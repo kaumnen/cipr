@@ -167,14 +167,20 @@ func scrapeJSONURL(ctx context.Context, pageURL string) (string, error) {
 	}
 	req.Header.Set("User-Agent", browserUA)
 
-	fmt.Fprintln(os.Stderr, "Resolving Azure ServiceTags JSON URL from:", pageURL)
+	fmt.Fprintln(os.Stderr, "Resolving Azure ServiceTags JSON URL from:", utils.SanitizeURL(pageURL))
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client, err := utils.NewHTTPClient()
+	if err != nil {
+		return "", err
+	}
+	started := time.Now()
 	resp, err := client.Do(req)
 	if err != nil {
+		utils.Debugf("http: GET %s failed after %s", utils.SanitizeURL(pageURL), time.Since(started).Round(time.Millisecond))
 		return "", fmt.Errorf("fetch %s: %w", pageURL, err)
 	}
 	defer resp.Body.Close()
+	utils.Debugf("http: GET %s returned %d after %s", utils.SanitizeURL(pageURL), resp.StatusCode, time.Since(started).Round(time.Millisecond))
 
 	if resp.StatusCode >= 400 {
 		return "", fmt.Errorf("unexpected status %d from %s", resp.StatusCode, pageURL)
@@ -187,6 +193,7 @@ func scrapeJSONURL(ctx context.Context, pageURL string) (string, error) {
 	if len(body) > maxAzurePageBytes {
 		return "", fmt.Errorf("page from %s exceeds %d byte limit", pageURL, maxAzurePageBytes)
 	}
+	utils.Debugf("http: read %d bytes from %s", len(body), utils.SanitizeURL(pageURL))
 
 	match := jsonURLRegex.FindString(string(body))
 	if match == "" {

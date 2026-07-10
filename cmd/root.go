@@ -23,7 +23,15 @@ var rootCmd = &cobra.Command{
 	Short:        "Retrieve IP ranges from cloud providers and services",
 	SilenceUsage: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return initConfig()
+		if err := initConfig(cmd); err != nil {
+			return err
+		}
+		utils.SetDebug(viper.GetBool("debug"))
+		utils.Debugf("config: using %s", viper.ConfigFileUsed())
+		if err := utils.ValidateProxyURL(viper.GetString("proxy")); err != nil {
+			return err
+		}
+		return nil
 	},
 	Long: `cipr is a CLI tool for retrieving IP ranges from various cloud providers
 and services (AWS, Azure, Cloudflare, DigitalOcean, GitHub, iCloud Private Relay).
@@ -51,32 +59,33 @@ func init() {
 	rootCmd.PersistentFlags().String("verbose-mode", "none", "Verbosity level: none, mini, full. Overrides --verbose")
 	rootCmd.PersistentFlags().String("source", "config", "Data source: config, an HTTP(S) URL, or a local file path")
 	rootCmd.PersistentFlags().Bool("no-cache", false, "Bypass cache (skip read and write)")
+	rootCmd.PersistentFlags().String("proxy", "", "HTTP(S) proxy URL (defaults to standard proxy environment variables)")
+	rootCmd.PersistentFlags().Bool("debug", false, "Enable diagnostic logging on stderr")
 
 	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
 	viper.BindPFlag("verbose_mode", rootCmd.PersistentFlags().Lookup("verbose-mode"))
 	viper.BindPFlag("source", rootCmd.PersistentFlags().Lookup("source"))
 	viper.BindPFlag("no_cache", rootCmd.PersistentFlags().Lookup("no-cache"))
+	viper.BindPFlag("proxy", rootCmd.PersistentFlags().Lookup("proxy"))
+	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 }
 
-func initConfig() error {
+func initConfig(cmd *cobra.Command) error {
+	var configPath string
 	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
+		configPath = cfgFile
 	} else {
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
 
-		configPath := filepath.Join(home, ".config", "cipr", "cipr.toml")
-		viper.SetConfigFile(configPath)
-		viper.SetConfigType("toml")
+		configPath = filepath.Join(home, ".config", "cipr", "cipr.toml")
+	}
+	viper.SetConfigFile(configPath)
+	viper.SetConfigType("toml")
 
-		if _, err := os.Stat(configPath); os.IsNotExist(err) {
-			if err := createDefaultConfig(configPath); err != nil {
-				return err
-			}
-		} else if err != nil {
-			return fmt.Errorf("inspect config file: %w", err)
-		}
+	if err := ensureConfigFile(configPath, cfgFile == "" || cmd.Name() == configureCmd.Name()); err != nil {
+		return err
 	}
 
 	viper.AutomaticEnv()
@@ -85,6 +94,20 @@ func initConfig() error {
 		return fmt.Errorf("read config file: %w", err)
 	}
 	return nil
+}
+
+func ensureConfigFile(configPath string, createIfMissing bool) error {
+	_, err := os.Stat(configPath)
+	switch {
+	case err == nil:
+		return nil
+	case os.IsNotExist(err) && createIfMissing:
+		return createDefaultConfig(configPath)
+	case os.IsNotExist(err):
+		return nil
+	default:
+		return fmt.Errorf("inspect config file: %w", err)
+	}
 }
 
 func resolveVerbosity(cmd *cobra.Command) (string, error) {
@@ -145,6 +168,9 @@ func createDefaultConfig(configPath string) error {
 #   <provider>_cache_ttl  = how long to reuse a cached hosted response. Go duration
 #                           string ("24h", "30m"). "0s" disables caching for this
 #                           provider; defaults to 24h if unset or unparseable.
+
+proxy = ""
+debug = false
 
 `
 	if _, err := fmt.Fprint(file, header); err != nil {

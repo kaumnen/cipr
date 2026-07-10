@@ -17,15 +17,24 @@ import (
 // failures are logged but never fatal. Suitable for providers (e.g. azure)
 // whose fetch path doesn't reduce to a single utils.GetRawData call.
 func GetCached(ctx context.Context, key string, fetch func(context.Context) (string, error)) (string, error) {
-	if key == "" || viper.GetBool("no_cache") {
+	if key == "" {
+		Debugf("cache: bypassed for unkeyed source")
+		return fetch(ctx)
+	}
+	if viper.GetBool("no_cache") {
+		Debugf("cache: bypassed for %s by configuration", key)
 		return fetch(ctx)
 	}
 	ttl := resolveCacheTTL(key)
 	if ttl > 0 {
 		if data, ok, _ := readCache(key, ttl); ok {
+			Debugf("cache: hit for %s (age %s, ttl %s)", key, cacheAge(key), ttl)
 			fmt.Fprintf(os.Stderr, "Using cached IP ranges for %s (age %s)\n", key, cacheAge(key))
 			return string(data), nil
 		}
+		Debugf("cache: miss or stale entry for %s (ttl %s)", key, ttl)
+	} else {
+		Debugf("cache: disabled for %s", key)
 	}
 	body, err := fetch(ctx)
 	if err != nil {
@@ -33,6 +42,9 @@ func GetCached(ctx context.Context, key string, fetch func(context.Context) (str
 	}
 	if werr := writeCache(key, []byte(body)); werr != nil {
 		fmt.Fprintln(os.Stderr, "Warning: cache write failed:", werr)
+		Debugf("cache: write failed for %s: %v", key, werr)
+	} else {
+		Debugf("cache: wrote %d bytes for %s", len(body), key)
 	}
 	return body, nil
 }

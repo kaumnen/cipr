@@ -51,6 +51,29 @@ run_and_expect icloud "172.224.224.0/27" icloud \
     --source "$ROOT_DIR/internal/testdata/icloud.csv" --ipv4 \
     --filter-country GB --filter-city London
 
+CONFIGURE_HOME="$WORK_DIR/configure-home"
+mkdir -p "$CONFIGURE_HOME"
+HOME="$CONFIGURE_HOME" "$BIN" configure aws \
+    --local-file "$ROOT_DIR/internal/testdata/aws.json" \
+    --cache-ttl 0s \
+    --proxy http://proxy.example:8080 \
+    --debug >"$WORK_DIR/configure.out" 2>"$WORK_DIR/configure.err"
+grep -Fq 'aws_active_source = "local-file"' "$WORK_DIR/configure.out"
+grep -Fq 'proxy = "http://proxy.example:8080"' "$WORK_DIR/configure.out"
+grep -Fq '[debug] config: using' "$WORK_DIR/configure.err"
+grep -Fq "aws_local_file = '$ROOT_DIR/internal/testdata/aws.json'" \
+    "$CONFIGURE_HOME/.config/cipr/cipr.toml"
+grep -Fq "aws_cache_ttl = '0s'" "$CONFIGURE_HOME/.config/cipr/cipr.toml"
+
+HOME="$CONFIGURE_HOME" "$BIN" configure aws --local-file= >"$WORK_DIR/configure-clear.out"
+grep -Fq 'aws_active_source = "endpoint"' "$WORK_DIR/configure-clear.out"
+
+CUSTOM_CONFIG="$WORK_DIR/custom-config/cipr.toml"
+HOME="$CONFIGURE_HOME" "$BIN" --config "$CUSTOM_CONFIG" configure github \
+    --cache-ttl 0s >"$WORK_DIR/configure-custom.out"
+test -f "$CUSTOM_CONFIG"
+grep -Fq "github_cache_ttl = '0s'" "$CUSTOM_CONFIG"
+
 UNINSTALL_HOME="$WORK_DIR/uninstall-home"
 mkdir -p "$UNINSTALL_HOME/.cipr/bin" "$UNINSTALL_HOME/.config/cipr" "$UNINSTALL_HOME/.cache/cipr"
 cp "$BIN" "$UNINSTALL_HOME/.cipr/bin/cipr"

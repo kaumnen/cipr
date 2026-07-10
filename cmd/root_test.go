@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -45,4 +47,30 @@ func TestResolveVerbosityRejectsInvalidValue(t *testing.T) {
 
 	_, err := resolveVerbosity(&cobra.Command{})
 	require.Error(t, err)
+}
+
+func TestEnsureConfigFileCreatesDefaultsForConfigure(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "nested", "cipr.toml")
+	require.NoError(t, ensureConfigFile(path, true))
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	text := string(data)
+	assert.Contains(t, text, `proxy = ""`)
+	assert.Contains(t, text, "debug = false")
+	assert.Contains(t, text, "cloudflare_ipv4_endpoint")
+}
+
+func TestEnsureConfigFileLeavesMissingCustomConfigForNormalCommands(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "missing.toml")
+	require.NoError(t, ensureConfigFile(path, false))
+	_, err := os.Stat(path)
+	assert.True(t, os.IsNotExist(err))
+}
+
+func TestUsesConfiguredSources(t *testing.T) {
+	assert.True(t, usesConfiguredSources("config"))
+	assert.True(t, usesConfiguredSources("hosted"))
+	assert.False(t, usesConfiguredSources("https://example.test/ranges"))
+	assert.False(t, usesConfiguredSources("ranges.txt"))
 }
