@@ -37,6 +37,10 @@ run_and_expect aws "44.192.140.112/28" aws \
     --filter-network-border-group us-east-1
 run_and_expect azure "13.66.143.220/30" azure \
     --source "$ROOT_DIR/internal/testdata/azure_servicetags_sample.json" --ipv4
+run_and_expect gcp "34.80.0.0/15" gcp \
+    --source "$ROOT_DIR/internal/testdata/gcp_cloud_sample.json" --ipv4 \
+    --filter-scope asia-east1 --filter-service "Google Cloud"
+test "$(wc -l < "$WORK_DIR/gcp.out")" -eq 1
 run_and_expect cloudflare-v4 "173.245.48.0/20" cloudflare \
     --source "$ROOT_DIR/internal/testdata/cloudflare_ipv4.txt" --ipv4
 run_and_expect cloudflare-v6 "2400:cb00::/32" cloudflare \

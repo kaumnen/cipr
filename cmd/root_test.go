@@ -59,6 +59,7 @@ func TestEnsureConfigFileCreatesDefaultsForConfigure(t *testing.T) {
 	assert.Contains(t, text, `proxy = ""`)
 	assert.Contains(t, text, "debug = false")
 	assert.Contains(t, text, "cloudflare_ipv4_endpoint")
+	assert.Contains(t, text, "gcp_endpoint")
 }
 
 func TestEnsureConfigFileLeavesMissingCustomConfigForNormalCommands(t *testing.T) {
