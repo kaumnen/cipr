@@ -119,6 +119,19 @@ func TestFiltrateIPRangesInvalidJSON(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestFiltrateIPRangesValidation(t *testing.T) {
+	t.Run("empty payload", func(t *testing.T) {
+		_, err := filtrateIPRanges(`{}`, "ipv4", []string{"*", "*"})
+		assert.ErrorContains(t, err, "no IP ranges found")
+	})
+
+	t.Run("invalid CIDR", func(t *testing.T) {
+		raw := `{"values":[{"name":"BadService","properties":{"addressPrefixes":["not-a-cidr"]}}]}`
+		_, err := filtrateIPRanges(raw, "ipv4", []string{"*", "*"})
+		assert.ErrorContains(t, err, `service "BadService" prefix 1`)
+	})
+}
+
 func TestJSONURLRegex(t *testing.T) {
 	cases := []struct {
 		name  string

@@ -105,6 +105,38 @@ func TestGetRawData_LocalPath(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
+func TestGetRawData_BareFilename(t *testing.T) {
+	dir := t.TempDir()
+	oldWorkingDir, err := os.Getwd()
+	assert.NoError(t, err)
+	assert.NoError(t, os.Chdir(dir))
+	t.Cleanup(func() { _ = os.Chdir(oldWorkingDir) })
+
+	want := "from-bare-filename"
+	assert.NoError(t, os.WriteFile("ranges.txt", []byte(want), 0o644))
+	got, err := GetRawData(context.Background(), "ranges.txt")
+	assert.NoError(t, err)
+	assert.Equal(t, want, got)
+}
+
+func TestGetRawData_UnsupportedURLScheme(t *testing.T) {
+	_, err := GetRawData(context.Background(), "ftp://example.com/ranges.txt")
+	assert.ErrorContains(t, err, "unsupported source URL scheme")
+}
+
+func TestGetRawData_InvalidURL(t *testing.T) {
+	_, err := GetRawData(context.Background(), "https://")
+	assert.ErrorContains(t, err, "invalid source URL")
+}
+
+func TestGetRawData_UnsupportedConfiguredEndpointScheme(t *testing.T) {
+	t.Cleanup(func() { viper.Reset() })
+	viper.Set("testprovider_endpoint", "ftp://example.com/ranges.txt")
+
+	_, err := GetRawData(context.Background(), "testprovider")
+	assert.ErrorContains(t, err, "unsupported source URL scheme")
+}
+
 func TestGetRawData_ViperKey(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Cleanup(func() { viper.Reset() })

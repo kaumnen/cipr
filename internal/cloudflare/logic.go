@@ -18,20 +18,30 @@ func GetIPRanges(ctx context.Context, config Config) error {
 	if err != nil {
 		return err
 	}
-	printIPRanges(parseIPRanges(rawData), config.Verbosity)
+	ipRanges, err := parseIPRanges(rawData)
+	if err != nil {
+		return err
+	}
+	printIPRanges(ipRanges, config.Verbosity)
 	return nil
 }
 
-func parseIPRanges(rawData string) []string {
+func parseIPRanges(rawData string) ([]string, error) {
 	lines := strings.Split(rawData, "\n")
 	var ipRanges []string
-	for _, line := range lines {
+	for i, line := range lines {
 		trimmed := strings.TrimSpace(line)
 		if trimmed != "" {
+			if !utils.IsCIDR(trimmed) {
+				return nil, fmt.Errorf("validate cloudflare line %d: %q is not a valid CIDR", i+1, trimmed)
+			}
 			ipRanges = append(ipRanges, trimmed)
 		}
 	}
-	return ipRanges
+	if len(ipRanges) == 0 {
+		return nil, fmt.Errorf("validate cloudflare data: no IP ranges found")
+	}
+	return ipRanges, nil
 }
 
 func printIPRanges(ipRanges []string, verbosity string) {

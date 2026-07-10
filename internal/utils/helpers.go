@@ -20,15 +20,25 @@ var DefaultEndpoints = map[string]string{
 	"github":          "https://api.github.com/meta",
 }
 
-// ResolveSource returns the source token to pass to GetRawData. When the
-// global --source is "hosted", returns hostedKey (a config-key prefix);
-// otherwise returns the user-provided URL or path verbatim.
+// ResolveSource returns the source token to pass to GetRawData. The "config"
+// default and the legacy "hosted" alias both resolve to the provider's config
+// key; URLs and paths are returned verbatim.
 func ResolveSource(hostedKey string) string {
 	src := viper.GetString("source")
-	if src == "hosted" {
+	if src == "config" || src == "hosted" {
 		return hostedKey
 	}
 	return src
+}
+
+// IsConfiguredSource reports whether source names a provider whose endpoint or
+// local-file settings should be read from viper. Everything else that is not an
+// HTTP(S) URL is treated as a local path, including a bare filename.
+func IsConfiguredSource(source string) bool {
+	if _, ok := DefaultEndpoints[source]; ok {
+		return true
+	}
+	return viper.IsSet(source+"_endpoint") || viper.IsSet(source+"_local_file")
 }
 
 func ContainsIgnoreCase(slice []string, item string) bool {
@@ -63,6 +73,11 @@ func IsIPv4(s string) bool {
 func IsIPv6(s string) bool {
 	addr := parseIP(s)
 	return addr.IsValid() && addr.Is6()
+}
+
+func IsCIDR(s string) bool {
+	_, err := netip.ParsePrefix(s)
+	return err == nil
 }
 
 // DedupeSorted returns the input with empty entries dropped and the

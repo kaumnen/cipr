@@ -83,6 +83,7 @@ func parseRecords(rawData string) ([]IPRange, error) {
 	r.FieldsPerRecord = -1
 
 	var ipRanges []IPRange
+	row := 0
 	for {
 		record, err := r.Read()
 		if err == io.EOF {
@@ -91,6 +92,7 @@ func parseRecords(rawData string) ([]IPRange, error) {
 		if err != nil {
 			return nil, fmt.Errorf("parse icloud csv: %w", err)
 		}
+		row++
 		ipRange := IPRange{}
 		if len(record) > 0 {
 			ipRange.IPRange = strings.TrimSpace(record[0])
@@ -104,7 +106,13 @@ func parseRecords(rawData string) ([]IPRange, error) {
 		if len(record) > 3 {
 			ipRange.City = strings.TrimSpace(record[3])
 		}
+		if !utils.IsCIDR(ipRange.IPRange) {
+			return nil, fmt.Errorf("validate icloud CSV row %d: %q is not a valid CIDR", row, ipRange.IPRange)
+		}
 		ipRanges = append(ipRanges, ipRange)
+	}
+	if len(ipRanges) == 0 {
+		return nil, fmt.Errorf("validate icloud csv: no IP ranges found")
 	}
 	return ipRanges, nil
 }

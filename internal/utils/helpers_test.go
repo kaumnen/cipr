@@ -10,6 +10,9 @@ import (
 func TestResolveSource(t *testing.T) {
 	t.Cleanup(func() { viper.Reset() })
 
+	viper.Set("source", "config")
+	assert.Equal(t, "aws", ResolveSource("aws"))
+
 	viper.Set("source", "hosted")
 	assert.Equal(t, "aws", ResolveSource("aws"))
 	assert.Equal(t, "cloudflare_ipv6", ResolveSource("cloudflare_ipv6"))
@@ -19,6 +22,9 @@ func TestResolveSource(t *testing.T) {
 
 	viper.Set("source", "/tmp/local.csv")
 	assert.Equal(t, "/tmp/local.csv", ResolveSource("aws"))
+
+	viper.Set("source", "ranges.csv")
+	assert.Equal(t, "ranges.csv", ResolveSource("aws"))
 }
 
 func TestContainsIgnoreCase(t *testing.T) {
@@ -61,4 +67,11 @@ func TestIPFamily(t *testing.T) {
 			assert.Equal(t, c.v6, IsIPv6(c.input), "IsIPv6(%q)", c.input)
 		})
 	}
+}
+
+func TestIsCIDR(t *testing.T) {
+	assert.True(t, IsCIDR("1.2.3.0/24"))
+	assert.True(t, IsCIDR("2606:4700::/32"))
+	assert.False(t, IsCIDR("1.2.3.4"))
+	assert.False(t, IsCIDR("not-an-ip"))
 }

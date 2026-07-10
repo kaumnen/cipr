@@ -72,9 +72,15 @@ func parseMeta(rawData string) ([]IPRange, error) {
 		if err := json.Unmarshal(raw[service], &cidrs); err != nil {
 			continue
 		}
-		for _, cidr := range cidrs {
+		for i, cidr := range cidrs {
+			if !utils.IsCIDR(cidr) {
+				return nil, fmt.Errorf("validate github service %q prefix %d: %q is not a valid CIDR", service, i+1, cidr)
+			}
 			ranges = append(ranges, IPRange{CIDR: cidr, Service: service})
 		}
+	}
+	if len(ranges) == 0 {
+		return nil, fmt.Errorf("validate github meta json: no IP ranges found")
 	}
 	return ranges, nil
 }
