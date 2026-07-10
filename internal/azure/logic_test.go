@@ -370,3 +370,23 @@ func TestFetchRawData_NoCacheBypass(t *testing.T) {
 	}
 	assert.Equal(t, 2, hits, "--no-cache should refetch every call")
 }
+
+func TestScrapeJSONURLUsesConfiguredProxy(t *testing.T) {
+	t.Cleanup(func() { viper.Reset() })
+
+	const pageURL = "http://azure.example/download/details.aspx?id=56519"
+	const want = "https://download.microsoft.com/test/ServiceTags_Public_20260101.json"
+	var hits int
+	proxy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		assert.Equal(t, pageURL, r.URL.String())
+		_, _ = w.Write([]byte(`<html><a href="` + want + `">download</a></html>`))
+	}))
+	defer proxy.Close()
+	viper.Set("proxy", proxy.URL)
+
+	got, err := scrapeJSONURL(context.Background(), pageURL)
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+	assert.Equal(t, 1, hits)
+}

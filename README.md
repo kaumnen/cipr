@@ -21,6 +21,22 @@ brew install cipr
 >
 > Documentation available at: [cipr.kaumnen.com](https://cipr.kaumnen.com/docs/intro)
 
+## Configuration and diagnostics
+
+cipr creates `$HOME/.config/cipr/cipr.toml` on first use. Inspect all managed
+settings with `cipr configure`, or target one source key:
+
+```bash
+cipr configure aws --endpoint https://example.com/aws-ranges.json
+cipr configure azure --local-file /path/to/azure-ranges.json --cache-ttl 0s
+cipr configure cloudflare_ipv4
+```
+
+`--proxy` supplies an HTTP(S) proxy for all network requests. When it is not
+set, cipr uses the standard `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`
+environment variables. `--debug` writes source, cache, proxy, and HTTP
+diagnostics to stderr without changing IP-range output.
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first

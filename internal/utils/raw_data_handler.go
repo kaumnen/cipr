@@ -17,8 +17,6 @@ import (
 // with the build version when one is set.
 var UserAgent = "cipr"
 
-var httpClient = &http.Client{Timeout: 30 * time.Second}
-
 const defaultCacheTTL = 24 * time.Hour
 const maxResponseBytes = 64 << 20
 
@@ -27,6 +25,7 @@ const maxResponseBytes = 64 << 20
 // a filesystem path.
 func GetRawData(ctx context.Context, source string) (string, error) {
 	var endpointURL, localFile, cacheKey string
+	sourceKind := ""
 
 	switch {
 	case source == "":
@@ -36,6 +35,7 @@ func GetRawData(ctx context.Context, source string) (string, error) {
 			return "", err
 		}
 		endpointURL = source
+		sourceKind = "url"
 	case IsConfiguredSource(source):
 		endpointURL = viper.GetString(source + "_endpoint")
 		localFile = viper.GetString(source + "_local_file")
@@ -44,12 +44,21 @@ func GetRawData(ctx context.Context, source string) (string, error) {
 		}
 		if localFile == "" {
 			cacheKey = source
+			sourceKind = "configured endpoint"
+		} else {
+			sourceKind = "configured local file"
 		}
 	case strings.Contains(source, "://"):
 		return "", ValidateHTTPURL(source)
 	default:
 		localFile = source
+		sourceKind = "local file"
 	}
+	debugSource := source
+	if strings.Contains(source, "://") {
+		debugSource = SanitizeURL(source)
+	}
+	Debugf("source: %q resolved as %s", debugSource, sourceKind)
 
 	if localFile != "" {
 		fmt.Fprintln(os.Stderr, "Fetching IP ranges from local file:", localFile)
@@ -64,7 +73,7 @@ func GetRawData(ctx context.Context, source string) (string, error) {
 	}
 
 	return GetCached(ctx, cacheKey, func(ctx context.Context) (string, error) {
-		fmt.Fprintln(os.Stderr, "Fetching IP ranges from endpoint:", endpointURL)
+		fmt.Fprintln(os.Stderr, "Fetching IP ranges from endpoint:", SanitizeURL(endpointURL))
 		return loadFromEndpoint(ctx, endpointURL)
 	})
 }
@@ -97,11 +106,18 @@ func loadFromEndpoint(ctx context.Context, url string) (string, error) {
 	}
 	req.Header.Set("User-Agent", UserAgent)
 
-	response, err := httpClient.Do(req)
+	client, err := NewHTTPClient()
 	if err != nil {
+		return "", err
+	}
+	started := time.Now()
+	response, err := client.Do(req)
+	if err != nil {
+		Debugf("http: GET %s failed after %s", SanitizeURL(url), time.Since(started).Round(time.Millisecond))
 		return "", fmt.Errorf("fetch %s: %w", url, err)
 	}
 	defer response.Body.Close()
+	Debugf("http: GET %s returned %d after %s", SanitizeURL(url), response.StatusCode, time.Since(started).Round(time.Millisecond))
 
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
 		return "", fmt.Errorf("unexpected status %d from %s", response.StatusCode, url)
@@ -111,6 +127,7 @@ func loadFromEndpoint(ctx context.Context, url string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("read body from %s: %w", url, err)
 	}
+	Debugf("http: read %d bytes from %s", len(body), SanitizeURL(url))
 	return string(body), nil
 }
 

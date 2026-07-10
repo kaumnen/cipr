@@ -20,7 +20,7 @@ var cloudflareCmd = &cobra.Command{
 
 		ipv4 := viper.GetBool("cloudflare_ipv4")
 		ipv6 := viper.GetBool("cloudflare_ipv6")
-		if viper.GetString("source") != "hosted" {
+		if !usesConfiguredSources(viper.GetString("source")) {
 			return cloudflare.GetIPRanges(cmd.Context(), cloudflare.Config{
 				Source: utils.ResolveSource("cloudflare"), Verbosity: verbosity,
 			})
@@ -45,6 +45,10 @@ var cloudflareCmd = &cobra.Command{
 		}
 		return nil
 	},
+}
+
+func usesConfiguredSources(source string) bool {
+	return source == "config" || source == "hosted"
 }
 
 func init() {
