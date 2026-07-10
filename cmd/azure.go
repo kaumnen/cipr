@@ -16,19 +16,16 @@ var azureCmd = &cobra.Command{
 	Use:   "azure",
 	Short: "Get Azure IP ranges.",
 	Long:  `Get Azure IPv4 and IPv6 ranges from the Public cloud service tags, with optional filtering.`,
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		verbosity := resolveVerbosity(cmd)
+		verbosity, err := resolveVerbosity(cmd)
+		if err != nil {
+			return err
+		}
 
 		ipv4 := viper.GetBool("azure_ipv4")
 		ipv6 := viper.GetBool("azure_ipv6")
-		both := !ipv4 && !ipv6
-		var ipVersions []string
-		if ipv4 || both {
-			ipVersions = append(ipVersions, "ipv4")
-		}
-		if ipv6 || both {
-			ipVersions = append(ipVersions, "ipv6")
-		}
+		ipType := resolveIPType(ipv4, ipv6)
 
 		filter := viper.GetString("azure-filter")
 		filterRegion := viper.GetString("azure-filter-region")
@@ -60,17 +57,9 @@ var azureCmd = &cobra.Command{
 			})
 		}
 
-		for _, version := range ipVersions {
-			if err := azure.GetIPRanges(cmd.Context(), azure.Config{
-				Source:    source,
-				IPType:    version,
-				Filter:    azureFilter,
-				Verbosity: verbosity,
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
+		return azure.GetIPRanges(cmd.Context(), azure.Config{
+			Source: source, IPType: ipType, Filter: azureFilter, Verbosity: verbosity,
+		})
 	},
 }
 

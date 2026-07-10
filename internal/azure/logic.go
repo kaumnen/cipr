@@ -57,6 +57,7 @@ var jsonURLRegex = regexp.MustCompile(`https://download\.microsoft\.com/[^"' ]+S
 // download page is almost certainly the lightweight anti-bot stub
 // rather than the full ~120 KB rendered page.
 const antiBotStubThreshold = 10 * 1024
+const maxAzurePageBytes = 4 << 20
 
 const recoveryHint = "Workarounds: download the JSON from the page in a browser " +
 	"and pass `--source <path>`, or set `azure_local_file` in cipr.toml. " +
@@ -127,9 +128,7 @@ func fetchRawData(ctx context.Context, source string) (string, error) {
 	switch {
 	case strings.HasPrefix(source, "https://") || strings.HasPrefix(source, "http://"):
 		endpointURL = source
-	case strings.Contains(source, "/"):
-		return utils.GetRawData(ctx, source)
-	default:
+	case source == "azure" || viper.IsSet(source+"_endpoint") || viper.IsSet(source+"_local_file"):
 		if lf := viper.GetString(source + "_local_file"); lf != "" {
 			return utils.GetRawData(ctx, source)
 		}
@@ -138,6 +137,8 @@ func fetchRawData(ctx context.Context, source string) (string, error) {
 			endpointURL = utils.DefaultEndpoints[source]
 		}
 		cacheKey = source
+	default:
+		return utils.GetRawData(ctx, source)
 	}
 
 	if endpointURL == "" {
@@ -176,9 +177,12 @@ func scrapeJSONURL(ctx context.Context, pageURL string) (string, error) {
 		return "", fmt.Errorf("unexpected status %d from %s", resp.StatusCode, pageURL)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxAzurePageBytes+1))
 	if err != nil {
 		return "", fmt.Errorf("read body from %s: %w", pageURL, err)
+	}
+	if len(body) > maxAzurePageBytes {
+		return "", fmt.Errorf("page from %s exceeds %d byte limit", pageURL, maxAzurePageBytes)
 	}
 
 	match := jsonURLRegex.FindString(string(body))

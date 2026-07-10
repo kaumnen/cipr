@@ -19,19 +19,18 @@ var UserAgent = "cipr"
 var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 const defaultCacheTTL = 24 * time.Hour
+const maxResponseBytes = 64 << 20
 
 // GetRawData fetches IP-range data for the given source. The source may be
 // a config-key prefix (e.g. "aws", looked up in viper), an http(s) URL, or
-// a filesystem path containing a slash.
+// a filesystem path.
 func GetRawData(ctx context.Context, source string) (string, error) {
 	var endpointURL, localFile, cacheKey string
 
 	switch {
 	case strings.HasPrefix(source, "https://") || strings.HasPrefix(source, "http://"):
 		endpointURL = source
-	case strings.Contains(source, "/"):
-		localFile = source
-	default:
+	case isHostedKey(source):
 		endpointURL = viper.GetString(source + "_endpoint")
 		localFile = viper.GetString(source + "_local_file")
 		if endpointURL == "" && localFile == "" {
@@ -40,6 +39,8 @@ func GetRawData(ctx context.Context, source string) (string, error) {
 		if localFile == "" {
 			cacheKey = source
 		}
+	default:
+		localFile = source
 	}
 
 	if localFile != "" {
@@ -78,13 +79,31 @@ func loadFromEndpoint(ctx context.Context, url string) (string, error) {
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode >= 400 {
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
 		return "", fmt.Errorf("unexpected status %d from %s", response.StatusCode, url)
 	}
 
-	body, err := io.ReadAll(response.Body)
+	body, err := readAllLimited(response.Body, maxResponseBytes)
 	if err != nil {
 		return "", fmt.Errorf("read body from %s: %w", url, err)
 	}
 	return string(body), nil
+}
+
+func isHostedKey(source string) bool {
+	if _, ok := DefaultEndpoints[source]; ok {
+		return true
+	}
+	return viper.IsSet(source+"_endpoint") || viper.IsSet(source+"_local_file")
+}
+
+func readAllLimited(r io.Reader, limit int64) ([]byte, error) {
+	body, err := io.ReadAll(io.LimitReader(r, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(body)) > limit {
+		return nil, fmt.Errorf("response exceeds %d byte limit", limit)
+	}
+	return body, nil
 }

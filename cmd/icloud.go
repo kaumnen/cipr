@@ -15,17 +15,14 @@ var icloudCmd = &cobra.Command{
 	Use:   "icloud",
 	Short: "Get iCloud private relay IP ranges.",
 	Long:  `Get iCloud private relay IPv4 and IPv6 ranges.`,
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		verbosity := resolveVerbosity(cmd)
-
-		ipType := "ipv4"
-		if viper.GetBool("icloud_ipv6") {
-			ipType = "ipv6"
+		verbosity, err := resolveVerbosity(cmd)
+		if err != nil {
+			return err
 		}
 
-		if !viper.GetBool("icloud_ipv4") && !viper.GetBool("icloud_ipv6") {
-			ipType = "both"
-		}
+		ipType := resolveIPType(viper.GetBool("icloud_ipv4"), viper.GetBool("icloud_ipv6"))
 
 		filters := icloud.Filters{
 			Country: viper.GetStringSlice("icloud-filter-country"),
