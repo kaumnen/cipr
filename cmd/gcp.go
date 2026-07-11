@@ -25,18 +25,13 @@ var gcpCmd = &cobra.Command{
 
 		ipType := resolveIPType(viper.GetBool("gcp_ipv4"), viper.GetBool("gcp_ipv6"))
 		filter := viper.GetString("gcp-filter")
-		filterScope := viper.GetString("gcp-filter-scope")
-		filterService := viper.GetString("gcp-filter-service")
-
-		if filter != "" && (filterScope != "" || filterService != "") {
-			return errors.New("--filter cannot be used with individual filter flags")
+		filters := gcp.Filters{
+			Scope:   viper.GetStringSlice("gcp-filter-scope"),
+			Service: viper.GetStringSlice("gcp-filter-service"),
 		}
 
-		var gcpFilter string
-		if filter != "" {
-			gcpFilter = filter
-		} else {
-			gcpFilter = fmt.Sprintf("%s,%s", filterScope, filterService)
+		if filter != "" && (len(filters.Scope) > 0 || len(filters.Service) > 0) {
+			return errors.New("--filter cannot be used with individual filter flags")
 		}
 
 		source := utils.ResolveSource("gcp")
@@ -47,14 +42,15 @@ var gcpCmd = &cobra.Command{
 			return gcp.GetIPRanges(cmd.Context(), gcp.Config{
 				Source:    source,
 				IPType:    "both",
-				Filter:    gcpFilter,
+				Filter:    filter,
+				Filters:   filters,
 				List:      list,
 				Verbosity: verbosity,
 			})
 		}
 
 		return gcp.GetIPRanges(cmd.Context(), gcp.Config{
-			Source: source, IPType: ipType, Filter: gcpFilter, Verbosity: verbosity,
+			Source: source, IPType: ipType, Filter: filter, Filters: filters, Verbosity: verbosity,
 		})
 	},
 }
@@ -67,8 +63,8 @@ func init() {
 	gcpCmd.Flags().Bool("ipv4", false, "Get only IPv4 ranges")
 	gcpCmd.Flags().Bool("ipv6", false, "Get only IPv6 ranges")
 	gcpCmd.Flags().String("filter", "", "Filter results. Syntax: scope,service")
-	gcpCmd.Flags().String("filter-scope", "", "Filter results by Google Cloud scope (for example, us-central1 or global)")
-	gcpCmd.Flags().String("filter-service", "", "Filter results by Google Cloud service")
+	gcpCmd.Flags().StringSlice("filter-scope", []string{}, "Filter results by Google Cloud scope (comma-separated, for example, us-central1,global)")
+	gcpCmd.Flags().StringSlice("filter-service", []string{}, "Filter results by Google Cloud service (comma-separated)")
 	gcpCmd.Flags().String("list", "", "List unique values for a dimension instead of IP ranges. Valid: scopes, services. Composes with --filter-* flags; ignores --ipv4/--ipv6.")
 
 	viper.BindPFlag("gcp_ipv4", gcpCmd.Flags().Lookup("ipv4"))
