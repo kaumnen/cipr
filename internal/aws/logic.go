@@ -51,8 +51,15 @@ type Config struct {
 	Source    string
 	IPType    string
 	Filter    string
+	Filters   Filters
 	List      string
 	Verbosity string
+}
+
+type Filters struct {
+	Region             []string
+	Service            []string
+	NetworkBorderGroup []string
 }
 
 func GetIPRanges(ctx context.Context, config Config) error {
@@ -61,8 +68,11 @@ func GetIPRanges(ctx context.Context, config Config) error {
 		return err
 	}
 
-	filterSlice := separateFilters(config.Filter)
-	readyIPs, err := filtrateIPRanges(rawData, config.IPType, filterSlice)
+	filters := config.Filters
+	if config.Filter != "" {
+		filters = filtersFromComposite(config.Filter)
+	}
+	readyIPs, err := filtrateIPRanges(rawData, config.IPType, filters)
 	if err != nil {
 		return err
 	}
@@ -126,7 +136,23 @@ func separateFilters(filterFlagValues string) []string {
 	return filterSlice
 }
 
-func filtrateIPRanges(rawData, ipType string, filterSlice []string) ([]IPPrefix, error) {
+func filtersFromComposite(filter string) Filters {
+	parts := separateFilters(filter)
+	return Filters{
+		Region:             wildcardToEmpty(parts[0]),
+		Service:            wildcardToEmpty(parts[1]),
+		NetworkBorderGroup: wildcardToEmpty(parts[2]),
+	}
+}
+
+func wildcardToEmpty(value string) []string {
+	if value == "*" {
+		return nil
+	}
+	return []string{value}
+}
+
+func filtrateIPRanges(rawData, ipType string, filters Filters) ([]IPPrefix, error) {
 	var data IPsData
 	if err := json.Unmarshal([]byte(rawData), &data); err != nil {
 		return nil, fmt.Errorf("parse aws ip-ranges json: %w", err)
@@ -159,17 +185,17 @@ func filtrateIPRanges(rawData, ipType string, filterSlice []string) ([]IPPrefix,
 
 	var result []IPPrefix
 	for _, prefix := range prefixes {
-		if matchesFilter(prefix, filterSlice) {
+		if matchesFilter(prefix, filters) {
 			result = append(result, prefix)
 		}
 	}
 	return result, nil
 }
 
-func matchesFilter(prefix IPPrefix, filterSlice []string) bool {
-	return (filterSlice[0] == "*" || strings.EqualFold(prefix.GetRegion(), filterSlice[0])) &&
-		(filterSlice[1] == "*" || strings.EqualFold(prefix.GetService(), filterSlice[1])) &&
-		(filterSlice[2] == "*" || strings.EqualFold(prefix.GetNetworkBorderGroup(), filterSlice[2]))
+func matchesFilter(prefix IPPrefix, filters Filters) bool {
+	return (len(filters.Region) == 0 || utils.ContainsIgnoreCase(filters.Region, prefix.GetRegion())) &&
+		(len(filters.Service) == 0 || utils.ContainsIgnoreCase(filters.Service, prefix.GetService())) &&
+		(len(filters.NetworkBorderGroup) == 0 || utils.ContainsIgnoreCase(filters.NetworkBorderGroup, prefix.GetNetworkBorderGroup()))
 }
 
 func printIPRanges(ipRanges []IPPrefix, verbosity string) {

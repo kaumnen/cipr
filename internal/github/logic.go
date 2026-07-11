@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/kaumnen/cipr/internal/utils"
 )
@@ -16,11 +15,11 @@ type IPRange struct {
 }
 
 type Config struct {
-	Source        string
-	IPType        string
-	FilterService string
-	List          string
-	Verbosity     string
+	Source         string
+	IPType         string
+	FilterServices []string
+	List           string
+	Verbosity      string
 }
 
 // nonCIDRKeys are top-level keys in the /meta payload whose values are not
@@ -43,7 +42,7 @@ func GetIPRanges(ctx context.Context, config Config) error {
 		return err
 	}
 
-	filtered := filtrate(ranges, config.IPType, config.FilterService)
+	filtered := filtrate(ranges, config.IPType, config.FilterServices)
 	if config.List != "" {
 		return printListedValues(filtered, config.List)
 	}
@@ -85,7 +84,7 @@ func parseMeta(rawData string) ([]IPRange, error) {
 	return ranges, nil
 }
 
-func filtrate(ranges []IPRange, ipType, filterService string) []IPRange {
+func filtrate(ranges []IPRange, ipType string, filterServices []string) []IPRange {
 	var result []IPRange
 	for _, r := range ranges {
 		if ipType == "ipv4" && !utils.IsIPv4(r.CIDR) {
@@ -94,7 +93,7 @@ func filtrate(ranges []IPRange, ipType, filterService string) []IPRange {
 		if ipType == "ipv6" && !utils.IsIPv6(r.CIDR) {
 			continue
 		}
-		if filterService != "" && !strings.EqualFold(r.Service, filterService) {
+		if len(filterServices) > 0 && !utils.ContainsIgnoreCase(filterServices, r.Service) {
 			continue
 		}
 		result = append(result, r)

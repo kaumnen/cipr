@@ -50,13 +50,13 @@ func TestFiltrateIPRanges(t *testing.T) {
 	cases := []struct {
 		name     string
 		ipType   string
-		filter   []string
+		filters  Filters
 		expected []Prefix
 	}{
 		{
-			name:   "ipv4 no filter",
-			ipType: "ipv4",
-			filter: []string{"*", "*"},
+			name:    "ipv4 no filter",
+			ipType:  "ipv4",
+			filters: Filters{},
 			expected: []Prefix{
 				{Address: "13.66.143.220/30", Region: "", Service: "ActionGroup"},
 				{Address: "20.50.32.0/19", Region: "westeurope", Service: "AzureStorage"},
@@ -65,9 +65,9 @@ func TestFiltrateIPRanges(t *testing.T) {
 			},
 		},
 		{
-			name:   "ipv6 no filter",
-			ipType: "ipv6",
-			filter: []string{"*", "*"},
+			name:    "ipv6 no filter",
+			ipType:  "ipv6",
+			filters: Filters{},
 			expected: []Prefix{
 				{Address: "2603:1000:4::10c/126", Region: "", Service: "ActionGroup"},
 				{Address: "2603:1020:206::/48", Region: "westeurope", Service: "AzureStorage"},
@@ -76,38 +76,38 @@ func TestFiltrateIPRanges(t *testing.T) {
 		{
 			name:     "filter by region",
 			ipType:   "ipv4",
-			filter:   []string{"westeurope", "*"},
+			filters:  Filters{Region: []string{"westeurope"}},
 			expected: []Prefix{{Address: "20.50.32.0/19", Region: "westeurope", Service: "AzureStorage"}},
 		},
 		{
 			name:     "filter by service",
 			ipType:   "ipv4",
-			filter:   []string{"*", "ActionGroup"},
+			filters:  Filters{Service: []string{"ActionGroup"}},
 			expected: []Prefix{{Address: "13.66.143.220/30", Region: "", Service: "ActionGroup"}},
 		},
 		{
 			name:     "filter by region and service combined",
 			ipType:   "ipv6",
-			filter:   []string{"westeurope", "AzureStorage"},
+			filters:  Filters{Region: []string{"westeurope"}, Service: []string{"AzureStorage"}},
 			expected: []Prefix{{Address: "2603:1020:206::/48", Region: "westeurope", Service: "AzureStorage"}},
 		},
 		{
 			name:     "filter case-insensitive",
 			ipType:   "ipv4",
-			filter:   []string{"WESTEUROPE", "azurestorage"},
+			filters:  Filters{Region: []string{"WESTEUROPE"}, Service: []string{"azurestorage"}},
 			expected: []Prefix{{Address: "20.50.32.0/19", Region: "westeurope", Service: "AzureStorage"}},
 		},
 		{
 			name:     "no matches",
 			ipType:   "ipv4",
-			filter:   []string{"southpole", "*"},
+			filters:  Filters{Region: []string{"southpole"}},
 			expected: nil,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := filtrateIPRanges(raw, tc.ipType, tc.filter)
+			got, err := filtrateIPRanges(raw, tc.ipType, tc.filters)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, got)
 		})
@@ -115,21 +115,32 @@ func TestFiltrateIPRanges(t *testing.T) {
 }
 
 func TestFiltrateIPRangesInvalidJSON(t *testing.T) {
-	_, err := filtrateIPRanges("not json", "ipv4", []string{"*", "*"})
+	_, err := filtrateIPRanges("not json", "ipv4", Filters{})
 	assert.Error(t, err)
 }
 
 func TestFiltrateIPRangesValidation(t *testing.T) {
 	t.Run("empty payload", func(t *testing.T) {
-		_, err := filtrateIPRanges(`{}`, "ipv4", []string{"*", "*"})
+		_, err := filtrateIPRanges(`{}`, "ipv4", Filters{})
 		assert.ErrorContains(t, err, "no IP ranges found")
 	})
 
 	t.Run("invalid CIDR", func(t *testing.T) {
 		raw := `{"values":[{"name":"BadService","properties":{"addressPrefixes":["not-a-cidr"]}}]}`
-		_, err := filtrateIPRanges(raw, "ipv4", []string{"*", "*"})
+		_, err := filtrateIPRanges(raw, "ipv4", Filters{})
 		assert.ErrorContains(t, err, `service "BadService" prefix 1`)
 	})
+}
+
+func TestFiltrateIPRangesMultipleValues(t *testing.T) {
+	raw := loadFixture(t)
+
+	got, err := filtrateIPRanges(raw, "ipv4", Filters{
+		Region:  []string{"eastus", "WESTEUROPE"},
+		Service: []string{"azurestorage", "MissingService"},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, []Prefix{{Address: "20.50.32.0/19", Region: "westeurope", Service: "AzureStorage"}}, got)
 }
 
 func TestJSONURLRegex(t *testing.T) {

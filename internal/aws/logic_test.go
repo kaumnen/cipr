@@ -48,15 +48,15 @@ func TestSeparateFilters(t *testing.T) {
 
 func TestFiltrateIPRanges(t *testing.T) {
 	testCases := []struct {
-		name        string
-		ipType      string
-		filterSlice []string
-		expected    []IPPrefix
+		name     string
+		ipType   string
+		filters  Filters
+		expected []IPPrefix
 	}{
 		{
-			name:        "ipv4 - filters: us-east-1 region, EBS service",
-			ipType:      "ipv4",
-			filterSlice: []string{"us-east-1", "EBS", "*"},
+			name:    "ipv4 - filters: us-east-1 region, EBS service",
+			ipType:  "ipv4",
+			filters: Filters{Region: []string{"us-east-1"}, Service: []string{"EBS"}},
 			expected: []IPPrefix{
 				IPv4Prefix{IPAddress: "44.192.140.112/28", Region: "us-east-1", Service: "EBS", NetworkBorderGroup: "us-east-1"},
 				IPv4Prefix{IPAddress: "44.192.140.128/29", Region: "us-east-1", Service: "EBS", NetworkBorderGroup: "us-east-1"},
@@ -65,9 +65,13 @@ func TestFiltrateIPRanges(t *testing.T) {
 			},
 		},
 		{
-			name:        "ipv6 - filters: eu-central-1 region, S3 service, eu-central-1 network border group",
-			ipType:      "ipv6",
-			filterSlice: []string{"eu-central-1", "S3", "eu-central-1"},
+			name:   "ipv6 - filters: eu-central-1 region, S3 service, eu-central-1 network border group",
+			ipType: "ipv6",
+			filters: Filters{
+				Region:             []string{"eu-central-1"},
+				Service:            []string{"S3"},
+				NetworkBorderGroup: []string{"eu-central-1"},
+			},
 			expected: []IPPrefix{
 				IPv6Prefix{IPv6Address: "2a05:d070:4000::/40", Region: "eu-central-1", Service: "S3", NetworkBorderGroup: "eu-central-1"},
 				IPv6Prefix{IPv6Address: "2a05:d079:4000::/40", Region: "eu-central-1", Service: "S3", NetworkBorderGroup: "eu-central-1"},
@@ -83,7 +87,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			rawData := mockGetReq()
 
-			result, err := filtrateIPRanges(rawData, tc.ipType, tc.filterSlice)
+			result, err := filtrateIPRanges(rawData, tc.ipType, tc.filters)
 			assert.NoError(t, err)
 
 			assert.Equal(t, len(tc.expected), len(result), "Test case '%s' failed: expected %d items, got %d",
@@ -111,11 +115,25 @@ func TestFiltrateIPRanges_Validation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := filtrateIPRanges(tt.raw, "ipv4", []string{"*", "*", "*"})
+			_, err := filtrateIPRanges(tt.raw, "ipv4", Filters{})
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tt.want)
 		})
 	}
+}
+
+func TestMatchesFilterMultipleValues(t *testing.T) {
+	prefix := IPv4Prefix{Region: "eu-central-1", Service: "S3", NetworkBorderGroup: "eu-central-1"}
+
+	assert.True(t, matchesFilter(prefix, Filters{
+		Region:             []string{"eu-west-1", "EU-CENTRAL-1"},
+		Service:            []string{"EC2", "s3"},
+		NetworkBorderGroup: []string{"eu-central-1", "global"},
+	}))
+	assert.False(t, matchesFilter(prefix, Filters{
+		Region:  []string{"eu-west-1", "eu-central-1"},
+		Service: []string{"EC2", "DYNAMODB"},
+	}))
 }
 
 func TestPrintIPRanges(t *testing.T) {

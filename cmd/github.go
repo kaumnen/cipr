@@ -34,7 +34,7 @@ var githubCmd = &cobra.Command{
 			ipType = ""
 		}
 
-		filterService := viper.GetString("github-filter-service")
+		filterServices := viper.GetStringSlice("github-filter-service")
 		source := utils.ResolveSource("github")
 
 		if list := viper.GetString("github-list"); list != "" {
@@ -42,19 +42,19 @@ var githubCmd = &cobra.Command{
 				return fmt.Errorf("invalid --list value %q (valid: %s)", list, strings.Join(githubListDimensions, ", "))
 			}
 			return github.GetIPRanges(cmd.Context(), github.Config{
-				Source:        source,
-				IPType:        "",
-				FilterService: filterService,
-				List:          list,
-				Verbosity:     verbosity,
+				Source:         source,
+				IPType:         "",
+				FilterServices: filterServices,
+				List:           list,
+				Verbosity:      verbosity,
 			})
 		}
 
 		return github.GetIPRanges(cmd.Context(), github.Config{
-			Source:        source,
-			IPType:        ipType,
-			FilterService: filterService,
-			Verbosity:     verbosity,
+			Source:         source,
+			IPType:         ipType,
+			FilterServices: filterServices,
+			Verbosity:      verbosity,
 		})
 	},
 }
@@ -66,7 +66,7 @@ func init() {
 
 	githubCmd.Flags().Bool("ipv4", false, "Get only IPv4 ranges")
 	githubCmd.Flags().Bool("ipv6", false, "Get only IPv6 ranges")
-	githubCmd.Flags().String("filter-service", "", "Filter results by GitHub service (e.g. actions, web, api, git, hooks, pages, packages, importer, github_enterprise_importer)")
+	githubCmd.Flags().StringSlice("filter-service", []string{}, "Filter results by GitHub service (comma-separated; e.g. actions, web, api, git, hooks, pages, packages, importer, github_enterprise_importer)")
 	githubCmd.Flags().String("list", "", "List unique values for a dimension instead of IP ranges. Valid: services. Composes with --filter-service; ignores --ipv4/--ipv6.")
 
 	viper.BindPFlag("github_ipv4", githubCmd.Flags().Lookup("ipv4"))
