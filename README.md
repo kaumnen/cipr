@@ -5,7 +5,7 @@
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/kaumnen/cipr/releaser.yml)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kaumnen/cipr)
 
-cipr is a command-line interface (CLI) tool designed to simplify the process of retrieving IP ranges from various cloud providers and services. It provides a quick and efficient way to access up-to-date IP ranges, which can be particularly useful for network administrators, security professionals, and developers working with cloud infrastructure.
+cipr is a command-line interface (CLI) tool designed to simplify the process of retrieving IP ranges from AWS, Azure, Cloudflare, DigitalOcean, GitHub, Google Cloud, and iCloud Private Relay. It provides a quick and efficient way to access up-to-date IP ranges, which can be particularly useful for network administrators, security professionals, and developers working with cloud infrastructure.
 
 ## Installation
 
@@ -19,22 +19,6 @@ brew install kaumnen/tap/cipr
 > Currently available for Linux and MacOS systems.
 >
 > Documentation available at: [cipr.kaumnen.com](https://cipr.kaumnen.com/docs/intro)
-
-## Configuration and diagnostics
-
-cipr creates `$HOME/.config/cipr/cipr.toml` on first use. Inspect all managed
-settings with `cipr configure`, or target one source key:
-
-```bash
-cipr configure aws --endpoint https://example.com/aws-ranges.json
-cipr configure azure --local-file /path/to/azure-ranges.json --cache-ttl 0s
-cipr configure cloudflare_ipv4
-```
-
-`--proxy` supplies an HTTP(S) proxy for all network requests. When it is not
-set, cipr uses the standard `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`
-environment variables. `--debug` writes source, cache, proxy, and HTTP
-diagnostics to stderr without changing IP-range output.
 
 ## Contributing
 

@@ -72,5 +72,6 @@ func TestInlineAssignmentCommentIgnoresHashesInsideStrings(t *testing.T) {
 func TestConfiguredSourceKeysAreSorted(t *testing.T) {
 	keys := configuredSourceKeys()
 	assert.True(t, strings.Contains(strings.Join(keys, ","), "cloudflare_ipv4"))
+	assert.Contains(t, keys, "gcp")
 	assert.True(t, sort.StringsAreSorted(keys))
 }
