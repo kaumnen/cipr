@@ -94,11 +94,11 @@ func TestFiltrate(t *testing.T) {
 	require.NoError(t, err)
 
 	testCases := []struct {
-		name          string
-		ipType        string
-		filterService string
-		expectedLen   int
-		assertService string
+		name           string
+		ipType         string
+		filterServices []string
+		expectedLen    int
+		assertService  string
 	}{
 		{
 			name:        "ipv4 only, no service filter",
@@ -111,30 +111,30 @@ func TestFiltrate(t *testing.T) {
 			expectedLen: 7,
 		},
 		{
-			name:          "both families, filter actions",
-			ipType:        "",
-			filterService: "actions",
-			expectedLen:   4,
-			assertService: "actions",
+			name:           "both families, filter actions",
+			ipType:         "",
+			filterServices: []string{"actions"},
+			expectedLen:    4,
+			assertService:  "actions",
 		},
 		{
-			name:          "ipv4 + service filter case-insensitive",
-			ipType:        "ipv4",
-			filterService: "ACTIONS",
-			expectedLen:   3,
-			assertService: "actions",
+			name:           "ipv4 + service filter case-insensitive",
+			ipType:         "ipv4",
+			filterServices: []string{"ACTIONS"},
+			expectedLen:    3,
+			assertService:  "actions",
 		},
 		{
-			name:          "nonexistent service yields empty",
-			ipType:        "",
-			filterService: "nonexistent",
-			expectedLen:   0,
+			name:           "nonexistent service yields empty",
+			ipType:         "",
+			filterServices: []string{"nonexistent"},
+			expectedLen:    0,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := filtrate(ranges, tc.ipType, tc.filterService)
+			result := filtrate(ranges, tc.ipType, tc.filterServices)
 			assert.Equal(t, tc.expectedLen, len(result))
 			if tc.assertService != "" {
 				for _, r := range result {
@@ -143,6 +143,16 @@ func TestFiltrate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFiltrateMultipleServices(t *testing.T) {
+	ranges := []IPRange{
+		{CIDR: "1.1.1.0/24", Service: "actions"},
+		{CIDR: "2.2.2.0/24", Service: "web"},
+		{CIDR: "3.3.3.0/24", Service: "api"},
+	}
+
+	assert.Equal(t, ranges[:2], filtrate(ranges, "", []string{"ACTIONS", "web"}))
 }
 
 func TestPrintIPRanges(t *testing.T) {

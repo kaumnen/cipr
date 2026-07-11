@@ -28,19 +28,14 @@ var awsCmd = &cobra.Command{
 		ipType := resolveIPType(ipv4, ipv6)
 
 		filter := viper.GetString("aws-filter")
-		filterRegion := viper.GetString("aws-filter-region")
-		filterService := viper.GetString("aws-filter-service")
-		filterNetworkBorderGroup := viper.GetString("aws-filter-network-border-group")
-
-		if filter != "" && (filterRegion != "" || filterService != "" || filterNetworkBorderGroup != "") {
-			return errors.New("--filter cannot be used with individual filter flags")
+		filters := aws.Filters{
+			Region:             viper.GetStringSlice("aws-filter-region"),
+			Service:            viper.GetStringSlice("aws-filter-service"),
+			NetworkBorderGroup: viper.GetStringSlice("aws-filter-network-border-group"),
 		}
 
-		var awsFilter string
-		if filter != "" {
-			awsFilter = filter
-		} else {
-			awsFilter = fmt.Sprintf("%s,%s,%s", filterRegion, filterService, filterNetworkBorderGroup)
+		if filter != "" && (len(filters.Region) > 0 || len(filters.Service) > 0 || len(filters.NetworkBorderGroup) > 0) {
+			return errors.New("--filter cannot be used with individual filter flags")
 		}
 
 		source := utils.ResolveSource("aws")
@@ -52,14 +47,15 @@ var awsCmd = &cobra.Command{
 			return aws.GetIPRanges(cmd.Context(), aws.Config{
 				Source:    source,
 				IPType:    "",
-				Filter:    awsFilter,
+				Filter:    filter,
+				Filters:   filters,
 				List:      list,
 				Verbosity: verbosity,
 			})
 		}
 
 		return aws.GetIPRanges(cmd.Context(), aws.Config{
-			Source: source, IPType: ipType, Filter: awsFilter, Verbosity: verbosity,
+			Source: source, IPType: ipType, Filter: filter, Filters: filters, Verbosity: verbosity,
 		})
 	},
 }
@@ -73,9 +69,9 @@ func init() {
 	awsCmd.Flags().Bool("ipv6", false, "Get only IPv6 ranges")
 	awsCmd.Flags().String("filter", "", "Filter results. Syntax: region,service,network-border-group")
 
-	awsCmd.Flags().String("filter-region", "", "Filter results by AWS region")
-	awsCmd.Flags().String("filter-service", "", "Filter results by AWS service")
-	awsCmd.Flags().String("filter-network-border-group", "", "Filter results by AWS network border group")
+	awsCmd.Flags().StringSlice("filter-region", []string{}, "Filter results by AWS region (comma-separated)")
+	awsCmd.Flags().StringSlice("filter-service", []string{}, "Filter results by AWS service (comma-separated)")
+	awsCmd.Flags().StringSlice("filter-network-border-group", []string{}, "Filter results by AWS network border group (comma-separated)")
 	awsCmd.Flags().String("list", "", "List unique values for a dimension instead of IP ranges. Valid: regions, services, network-border-groups. Composes with --filter-* flags; ignores --ipv4/--ipv6.")
 
 	viper.BindPFlag("aws_ipv4", awsCmd.Flags().Lookup("ipv4"))

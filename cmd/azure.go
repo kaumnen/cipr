@@ -28,18 +28,13 @@ var azureCmd = &cobra.Command{
 		ipType := resolveIPType(ipv4, ipv6)
 
 		filter := viper.GetString("azure-filter")
-		filterRegion := viper.GetString("azure-filter-region")
-		filterService := viper.GetString("azure-filter-service")
-
-		if filter != "" && (filterRegion != "" || filterService != "") {
-			return errors.New("--filter cannot be used with individual filter flags")
+		filters := azure.Filters{
+			Region:  viper.GetStringSlice("azure-filter-region"),
+			Service: viper.GetStringSlice("azure-filter-service"),
 		}
 
-		var azureFilter string
-		if filter != "" {
-			azureFilter = filter
-		} else {
-			azureFilter = fmt.Sprintf("%s,%s", filterRegion, filterService)
+		if filter != "" && (len(filters.Region) > 0 || len(filters.Service) > 0) {
+			return errors.New("--filter cannot be used with individual filter flags")
 		}
 
 		source := utils.ResolveSource("azure")
@@ -51,14 +46,15 @@ var azureCmd = &cobra.Command{
 			return azure.GetIPRanges(cmd.Context(), azure.Config{
 				Source:    source,
 				IPType:    "",
-				Filter:    azureFilter,
+				Filter:    filter,
+				Filters:   filters,
 				List:      list,
 				Verbosity: verbosity,
 			})
 		}
 
 		return azure.GetIPRanges(cmd.Context(), azure.Config{
-			Source: source, IPType: ipType, Filter: azureFilter, Verbosity: verbosity,
+			Source: source, IPType: ipType, Filter: filter, Filters: filters, Verbosity: verbosity,
 		})
 	},
 }
@@ -72,8 +68,8 @@ func init() {
 	azureCmd.Flags().Bool("ipv6", false, "Get only IPv6 ranges")
 	azureCmd.Flags().String("filter", "", "Filter results. Syntax: region,service")
 
-	azureCmd.Flags().String("filter-region", "", "Filter results by Azure region (e.g. westeurope)")
-	azureCmd.Flags().String("filter-service", "", "Filter results by Azure system service (e.g. AzureStorage)")
+	azureCmd.Flags().StringSlice("filter-region", []string{}, "Filter results by Azure region (comma-separated, e.g. westeurope,eastus)")
+	azureCmd.Flags().StringSlice("filter-service", []string{}, "Filter results by Azure system service (comma-separated, e.g. AzureStorage,AzureKeyVault)")
 	azureCmd.Flags().String("list", "", "List unique values for a dimension instead of IP ranges. Valid: regions, services. Composes with --filter-* flags; ignores --ipv4/--ipv6.")
 
 	viper.BindPFlag("azure_ipv4", azureCmd.Flags().Lookup("ipv4"))
