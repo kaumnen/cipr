@@ -124,7 +124,7 @@ func TestFiltrateIPRanges(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := filtrateIPRanges(rawData, tt.ipType, separateFilters(tt.filter))
+			got, err := filtrateIPRanges(rawData, tt.ipType, filtersFromComposite(tt.filter))
 			require.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
@@ -149,7 +149,7 @@ func TestFiltrateIPRangesValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := filtrateIPRanges(tt.raw, "both", separateFilters(""))
+			_, err := filtrateIPRanges(tt.raw, "both", Filters{})
 			require.Error(t, err)
 			assert.ErrorContains(t, err, tt.want)
 		})
@@ -161,7 +161,7 @@ func TestFiltrateIPRangesValidatesExcludedEntries(t *testing.T) {
 		{"ipv4Prefix":"192.0.2.0/24","service":"Google Cloud","scope":"global"},
 		{"ipv6Prefix":"invalid","service":"Google Cloud","scope":"elsewhere"}
 	]}`
-	_, err := filtrateIPRanges(rawData, "ipv4", separateFilters("global,"))
+	_, err := filtrateIPRanges(rawData, "ipv4", filtersFromComposite("global,"))
 	require.Error(t, err)
 	assert.ErrorContains(t, err, "validate gcp IPv6 prefix 2")
 }
@@ -171,10 +171,28 @@ func TestFiltrateIPRangesFiltersService(t *testing.T) {
 		{"ipv4Prefix":"192.0.2.0/24","service":"Google Cloud","scope":"global"},
 		{"ipv4Prefix":"198.51.100.0/24","service":"Future Service","scope":"global"}
 	]}`
-	got, err := filtrateIPRanges(rawData, "ipv4", separateFilters(",google cloud"))
+	got, err := filtrateIPRanges(rawData, "ipv4", filtersFromComposite(",google cloud"))
 	require.NoError(t, err)
 	assert.Equal(t, []Prefix{
 		{Address: "192.0.2.0/24", Scope: "global", Service: "Google Cloud"},
+	}, got)
+}
+
+func TestFiltrateIPRangesMultipleValues(t *testing.T) {
+	rawData := `{"prefixes":[
+		{"ipv4Prefix":"192.0.2.0/24","service":"Google Cloud","scope":"global"},
+		{"ipv4Prefix":"198.51.100.0/24","service":"Future Service","scope":"asia-east1"},
+		{"ipv4Prefix":"203.0.113.0/24","service":"Other Service","scope":"africa-south1"}
+	]}`
+
+	got, err := filtrateIPRanges(rawData, "ipv4", Filters{
+		Scope:   []string{"GLOBAL", "asia-east1"},
+		Service: []string{"google cloud", "FUTURE SERVICE"},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, []Prefix{
+		{Address: "192.0.2.0/24", Scope: "global", Service: "Google Cloud"},
+		{Address: "198.51.100.0/24", Scope: "asia-east1", Service: "Future Service"},
 	}, got)
 }
 

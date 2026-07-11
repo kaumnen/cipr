@@ -32,8 +32,14 @@ type Config struct {
 	Source    string
 	IPType    string
 	Filter    string
+	Filters   Filters
 	List      string
 	Verbosity string
+}
+
+type Filters struct {
+	Scope   []string
+	Service []string
 }
 
 func GetIPRanges(ctx context.Context, config Config) error {
@@ -46,7 +52,11 @@ func GetIPRanges(ctx context.Context, config Config) error {
 	if config.List != "" {
 		ipType = "both"
 	}
-	prefixes, err := filtrateIPRanges(rawData, ipType, separateFilters(config.Filter))
+	filters := config.Filters
+	if config.Filter != "" {
+		filters = filtersFromComposite(config.Filter)
+	}
+	prefixes, err := filtrateIPRanges(rawData, ipType, filters)
 	if err != nil {
 		return err
 	}
@@ -73,7 +83,22 @@ func separateFilters(filterFlagValues string) []string {
 	return filters[:2]
 }
 
-func filtrateIPRanges(rawData, ipType string, filterSlice []string) ([]Prefix, error) {
+func filtersFromComposite(filter string) Filters {
+	parts := separateFilters(filter)
+	return Filters{
+		Scope:   wildcardToEmpty(parts[0]),
+		Service: wildcardToEmpty(parts[1]),
+	}
+}
+
+func wildcardToEmpty(value string) []string {
+	if value == "*" {
+		return nil
+	}
+	return []string{value}
+}
+
+func filtrateIPRanges(rawData, ipType string, filters Filters) ([]Prefix, error) {
 	var data IPsData
 	if err := json.Unmarshal([]byte(rawData), &data); err != nil {
 		return nil, fmt.Errorf("parse gcp cloud ip-ranges json: %w", err)
@@ -105,7 +130,7 @@ func filtrateIPRanges(rawData, ipType string, filterSlice []string) ([]Prefix, e
 		if wrongFamily {
 			return nil, fmt.Errorf("validate gcp %s prefix %d: %q has the wrong address family", family, i+1, address)
 		}
-		if !matchesFilter(source, filterSlice) || !ipVersionMatches(address, ipType) {
+		if !matchesFilter(source, filters) || !ipVersionMatches(address, ipType) {
 			continue
 		}
 		result = append(result, Prefix{Address: address, Scope: source.Scope, Service: source.Service})
@@ -113,9 +138,9 @@ func filtrateIPRanges(rawData, ipType string, filterSlice []string) ([]Prefix, e
 	return result, nil
 }
 
-func matchesFilter(prefix sourcePrefix, filterSlice []string) bool {
-	return (filterSlice[0] == "*" || strings.EqualFold(prefix.Scope, filterSlice[0])) &&
-		(filterSlice[1] == "*" || strings.EqualFold(prefix.Service, filterSlice[1]))
+func matchesFilter(prefix sourcePrefix, filters Filters) bool {
+	return (len(filters.Scope) == 0 || utils.ContainsIgnoreCase(filters.Scope, prefix.Scope)) &&
+		(len(filters.Service) == 0 || utils.ContainsIgnoreCase(filters.Service, prefix.Service))
 }
 
 func ipVersionMatches(address, ipType string) bool {
