@@ -54,6 +54,12 @@ run_and_expect cloudflare-v6 "2400:cb00::/32" cloudflare \
 run_and_expect digitalocean "5.101.96.0/21" do \
     --source "$ROOT_DIR/internal/testdata/do.csv" --ipv4 \
     --filter-country NL --filter-city Amsterdam
+run_and_expect fastly-v4 "151.101.0.0/16" fastly \
+    --source "$ROOT_DIR/internal/testdata/fastly_sample.json" --ipv4
+test "$(wc -l < "$WORK_DIR/fastly-v4.out")" -eq 21
+run_and_expect fastly-v6 "2a04:4e40::/32" fastly \
+    --source "$ROOT_DIR/internal/testdata/fastly_sample.json" --ipv6
+test "$(wc -l < "$WORK_DIR/fastly-v6.out")" -eq 3
 run_and_expect github "192.30.252.0/22" github \
     --source "$ROOT_DIR/internal/testdata/github_meta_sample.json" --ipv4 \
     --filter-service web
