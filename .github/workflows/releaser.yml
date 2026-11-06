@@ -4,7 +4,7 @@ name: goreleaser
 on:
   push:
     tags:
-      - "*"
+      - "v*"
 
 permissions:
   contents: write
@@ -26,7 +26,8 @@ jobs:
         uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
-          version: latest
+          # v3 may drop `brews`, which the Linux formula needs.
+          version: "~> v2"
           args: release --clean
         env:
           # RELEASER_TOKEN is a PAT (not the default GITHUB_TOKEN) because
