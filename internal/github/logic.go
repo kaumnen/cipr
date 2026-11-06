@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"slices"
 	"sort"
 
 	"github.com/kaumnen/cipr/internal/utils"
@@ -20,15 +22,6 @@ type Config struct {
 	FilterServices []string
 	List           string
 	Verbosity      string
-}
-
-// nonCIDRKeys are top-level keys in the /meta payload whose values are not
-// CIDR arrays. They are skipped during parsing.
-var nonCIDRKeys = map[string]struct{}{
-	"verifiable_password_authentication": {},
-	"ssh_key_fingerprints":               {},
-	"ssh_keys":                           {},
-	"domains":                            {},
 }
 
 func GetIPRanges(ctx context.Context, config Config) error {
@@ -58,17 +51,19 @@ func parseMeta(rawData string) ([]IPRange, error) {
 
 	services := make([]string, 0, len(raw))
 	for k := range raw {
-		if _, skip := nonCIDRKeys[k]; skip {
-			continue
-		}
 		services = append(services, k)
 	}
 	sort.Strings(services)
 
+	// /meta also holds keys and other metadata. A service is a list
+	// with at least one CIDR.
 	var ranges []IPRange
 	for _, service := range services {
 		var cidrs []string
 		if err := json.Unmarshal(raw[service], &cidrs); err != nil {
+			continue
+		}
+		if !slices.ContainsFunc(cidrs, utils.IsCIDR) {
 			continue
 		}
 		for i, cidr := range cidrs {
@@ -112,7 +107,7 @@ func printListedValues(ranges []IPRange, dim string) error {
 	}
 	values = utils.DedupeSorted(values)
 	if len(values) == 0 {
-		fmt.Println("No values to display.")
+		fmt.Fprintln(os.Stderr, "No values to display.")
 		return nil
 	}
 	for _, v := range values {
@@ -123,7 +118,7 @@ func printListedValues(ranges []IPRange, dim string) error {
 
 func printIPRanges(ranges []IPRange, verbosity string) {
 	if len(ranges) == 0 {
-		fmt.Println("No IP ranges to display.")
+		fmt.Fprintln(os.Stderr, "No IP ranges to display.")
 		return
 	}
 
@@ -138,7 +133,13 @@ func printIPRanges(ranges []IPRange, verbosity string) {
 			fmt.Printf("IP Prefix: %s, Service: %s\n", r.CIDR, r.Service)
 		}
 	default:
+		// CIDRs repeat across services.
+		seen := make(map[string]struct{}, len(ranges))
 		printFunc = func(r IPRange) {
+			if _, dup := seen[r.CIDR]; dup {
+				return
+			}
+			seen[r.CIDR] = struct{}{}
 			fmt.Println(r.CIDR)
 		}
 	}

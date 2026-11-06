@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"sort"
 	"strings"
 
@@ -19,7 +20,6 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:          "cipr",
-	Version:      version,
 	Short:        "Retrieve IP ranges from cloud providers and services",
 	SilenceUsage: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -50,8 +50,9 @@ func Execute() {
 }
 
 func init() {
-	if version != "" {
-		utils.UserAgent = "cipr/" + version
+	rootCmd.Version = resolveVersion(version)
+	if rootCmd.Version != "" {
+		utils.UserAgent = "cipr/" + rootCmd.Version
 	}
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "Config file (default is $HOME/.config/cipr/cipr.toml)")
@@ -69,7 +70,20 @@ func init() {
 	viper.BindPFlag("no_cache", rootCmd.PersistentFlags().Lookup("no-cache"))
 	viper.BindPFlag("proxy", rootCmd.PersistentFlags().Lookup("proxy"))
 	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
+	// Ignore generic names such as DEBUG or SOURCE.
+	viper.SetEnvPrefix("cipr")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+}
+
+// resolveVersion falls back to build info for go install builds.
+func resolveVersion(linked string) string {
+	if linked != "" {
+		return linked
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return ""
 }
 
 func initConfig(cmd *cobra.Command) error {

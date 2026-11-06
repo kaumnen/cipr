@@ -215,7 +215,7 @@ func TestPrintIPRanges(t *testing.T) {
 			name:      "empty",
 			prefixes:  []Prefix{},
 			verbosity: "none",
-			want:      "No IP ranges to display.\n",
+			want:      "",
 		},
 		{
 			name: "none verbosity",
@@ -224,6 +224,25 @@ func TestPrintIPRanges(t *testing.T) {
 			},
 			verbosity: "none",
 			want:      "20.50.32.0/19\n",
+		},
+		{
+			name: "none verbosity prints each prefix once",
+			prefixes: []Prefix{
+				{Address: "20.50.32.0/19", Region: "", Service: ""},
+				{Address: "13.66.143.220/30", Region: "", Service: "ActionGroup"},
+				{Address: "20.50.32.0/19", Region: "westeurope", Service: "AzureStorage"},
+			},
+			verbosity: "none",
+			want:      "20.50.32.0/19\n13.66.143.220/30\n",
+		},
+		{
+			name: "mini verbosity keeps rows that differ by tag",
+			prefixes: []Prefix{
+				{Address: "20.50.32.0/19", Region: "", Service: ""},
+				{Address: "20.50.32.0/19", Region: "westeurope", Service: "AzureStorage"},
+			},
+			verbosity: "mini",
+			want:      "20.50.32.0/19,,\n20.50.32.0/19,westeurope,AzureStorage\n",
 		},
 		{
 			name: "mini verbosity",

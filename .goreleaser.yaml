@@ -29,6 +29,8 @@ release:
 
 brews:
   - homepage: https://github.com/kaumnen/cipr
+    description: "Retrieve IP ranges from cloud providers and services"
+    license: "MIT"
     repository:
       owner: kaumnen
       name: homebrew-tap

@@ -42,7 +42,7 @@ func TestParseMeta(t *testing.T) {
 		seen[r.Service]++
 	}
 
-	for _, k := range []string{"verifiable_password_authentication", "ssh_key_fingerprints", "ssh_keys"} {
+	for _, k := range []string{"verifiable_password_authentication", "ssh_key_fingerprints", "ssh_keys", "domains", "commit_signing_keys"} {
 		_, present := seen[k]
 		assert.False(t, present, "non-CIDR key %q must not leak into parsed ranges", k)
 	}
@@ -79,6 +79,17 @@ func TestParseMeta_Validation(t *testing.T) {
 	t.Run("invalid CIDR", func(t *testing.T) {
 		_, err := parseMeta(`{"web":["1.1.1.0/24","not-a-cidr"]}`)
 		assert.ErrorContains(t, err, `service "web" prefix 2`)
+	})
+
+	t.Run("string arrays without CIDRs are ignored", func(t *testing.T) {
+		ranges, err := parseMeta(`{"web":["1.1.1.0/24"],"future_keys":["-----BEGIN PGP PUBLIC KEY BLOCK-----"],"empty":[]}`)
+		require.NoError(t, err)
+		assert.Equal(t, []IPRange{{CIDR: "1.1.1.0/24", Service: "web"}}, ranges)
+	})
+
+	t.Run("invalid entry in a CIDR list still fails", func(t *testing.T) {
+		_, err := parseMeta(`{"web":["not-a-cidr","1.1.1.0/24"]}`)
+		assert.ErrorContains(t, err, `service "web" prefix 1`)
 	})
 
 	t.Run("unknown non-range metadata is ignored", func(t *testing.T) {
@@ -166,7 +177,7 @@ func TestPrintIPRanges(t *testing.T) {
 			name:           "empty list",
 			ranges:         []IPRange{},
 			verbosity:      "none",
-			expectedOutput: "No IP ranges to display.\n",
+			expectedOutput: "",
 		},
 		{
 			name: "none prints CIDR only",
@@ -176,6 +187,25 @@ func TestPrintIPRanges(t *testing.T) {
 			},
 			verbosity:      "none",
 			expectedOutput: "192.30.252.0/22\n2606:50c0::/32\n",
+		},
+		{
+			name: "none prints each CIDR once",
+			ranges: []IPRange{
+				{CIDR: "192.30.252.0/22", Service: "api"},
+				{CIDR: "4.148.0.0/16", Service: "actions"},
+				{CIDR: "192.30.252.0/22", Service: "web"},
+			},
+			verbosity:      "none",
+			expectedOutput: "192.30.252.0/22\n4.148.0.0/16\n",
+		},
+		{
+			name: "mini keeps rows that differ by service",
+			ranges: []IPRange{
+				{CIDR: "192.30.252.0/22", Service: "api"},
+				{CIDR: "192.30.252.0/22", Service: "web"},
+			},
+			verbosity:      "mini",
+			expectedOutput: "192.30.252.0/22,api\n192.30.252.0/22,web\n",
 		},
 		{
 			name: "mini prints CIDR,service",
@@ -233,7 +263,7 @@ func TestPrintListedValues(t *testing.T) {
 		out := captureStdout(t, func() {
 			require.NoError(t, printListedValues(nil, "services"))
 		})
-		assert.Equal(t, "No values to display.\n", out)
+		assert.Empty(t, out, "placeholder belongs on stderr")
 	})
 
 	t.Run("unknown dim returns error", func(t *testing.T) {
@@ -266,7 +296,7 @@ func TestGetIPRanges_List(t *testing.T) {
 		assert.False(t, dup, "duplicate service %q", l)
 		seen[l] = struct{}{}
 	}
-	for _, k := range []string{"ssh_keys", "ssh_key_fingerprints", "verifiable_password_authentication"} {
+	for _, k := range []string{"ssh_keys", "ssh_key_fingerprints", "verifiable_password_authentication", "domains", "commit_signing_keys"} {
 		_, leaked := seen[k]
 		assert.False(t, leaked, "non-CIDR key %q leaked into services list", k)
 	}

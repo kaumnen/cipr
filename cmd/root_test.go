@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -74,4 +75,25 @@ func TestUsesConfiguredSources(t *testing.T) {
 	assert.True(t, usesConfiguredSources("hosted"))
 	assert.False(t, usesConfiguredSources("https://example.test/ranges"))
 	assert.False(t, usesConfiguredSources("ranges.txt"))
+}
+
+func TestEnvironmentRequiresCiprPrefix(t *testing.T) {
+	viper.AutomaticEnv()
+
+	t.Setenv("SOURCE", "unprefixed.json")
+	t.Setenv("VERBOSE", "true")
+	assert.Equal(t, "config", viper.GetString("source"))
+	assert.False(t, viper.GetBool("verbose"))
+
+	t.Setenv("CIPR_SOURCE", "prefixed.json")
+	t.Setenv("CIPR_NO_CACHE", "true")
+	assert.Equal(t, "prefixed.json", viper.GetString("source"))
+	assert.True(t, viper.GetBool("no_cache"))
+}
+
+func TestResolveVersion(t *testing.T) {
+	assert.Equal(t, "v1.2.3", resolveVersion("v1.2.3"))
+	if fallback := resolveVersion(""); fallback != "" {
+		assert.True(t, strings.HasPrefix(fallback, "v"), "unexpected build-info version %q", fallback)
+	}
 }

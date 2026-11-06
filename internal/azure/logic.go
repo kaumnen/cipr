@@ -117,7 +117,7 @@ func printListedValues(prefixes []Prefix, dim string) error {
 	}
 	values = utils.DedupeSorted(values)
 	if len(values) == 0 {
-		fmt.Println("No values to display.")
+		fmt.Fprintln(os.Stderr, "No values to display.")
 		return nil
 	}
 	for _, v := range values {
@@ -302,7 +302,7 @@ func ipVersionMatches(addr, ipType string) bool {
 
 func printIPRanges(prefixes []Prefix, verbosity string) {
 	if len(prefixes) == 0 {
-		fmt.Println("No IP ranges to display.")
+		fmt.Fprintln(os.Stderr, "No IP ranges to display.")
 		return
 	}
 
@@ -317,7 +317,15 @@ func printIPRanges(prefixes []Prefix, verbosity string) {
 			fmt.Printf("IP Prefix: %s, Region: %s, Service: %s\n", p.Address, p.Region, p.Service)
 		}
 	default:
-		printFunc = func(p Prefix) { fmt.Println(p.Address) }
+		// Prefixes repeat across service tags.
+		seen := make(map[string]struct{}, len(prefixes))
+		printFunc = func(p Prefix) {
+			if _, dup := seen[p.Address]; dup {
+				return
+			}
+			seen[p.Address] = struct{}{}
+			fmt.Println(p.Address)
+		}
 	}
 
 	for _, p := range prefixes {

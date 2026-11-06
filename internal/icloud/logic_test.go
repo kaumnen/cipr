@@ -167,7 +167,7 @@ func TestPrintIPRanges(t *testing.T) {
 			name:      "No IP ranges",
 			ipRanges:  []IPRange{},
 			verbosity: "none",
-			expected:  "No IP ranges to display.\n",
+			expected:  "",
 		},
 		{
 			name:      "Verbosity none",

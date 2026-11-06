@@ -147,7 +147,7 @@ func TestPrintIPRanges(t *testing.T) {
 			name:           "Empty IP range list",
 			IPranges:       []IPPrefix{},
 			verbosity:      "none",
-			expectedOutput: "No IP ranges to display.\n",
+			expectedOutput: "",
 		},
 		{
 			name: "IPv4 - Verbosity None",
@@ -157,6 +157,25 @@ func TestPrintIPRanges(t *testing.T) {
 			},
 			verbosity:      "none",
 			expectedOutput: "52.216.160.0/23\n54.240.224.0/21\n",
+		},
+		{
+			name: "Verbosity None prints each prefix once",
+			IPranges: []IPPrefix{
+				IPv4Prefix{IPAddress: "3.5.140.0/22", Region: "us-east-1", Service: "AMAZON", NetworkBorderGroup: "us-east-1"},
+				IPv4Prefix{IPAddress: "52.216.160.0/23", Region: "us-east-1", Service: "S3", NetworkBorderGroup: "us-east-1"},
+				IPv4Prefix{IPAddress: "3.5.140.0/22", Region: "us-east-1", Service: "EC2", NetworkBorderGroup: "us-east-1"},
+			},
+			verbosity:      "none",
+			expectedOutput: "3.5.140.0/22\n52.216.160.0/23\n",
+		},
+		{
+			name: "Verbosity Mini keeps rows that differ by service",
+			IPranges: []IPPrefix{
+				IPv4Prefix{IPAddress: "3.5.140.0/22", Region: "us-east-1", Service: "AMAZON", NetworkBorderGroup: "us-east-1"},
+				IPv4Prefix{IPAddress: "3.5.140.0/22", Region: "us-east-1", Service: "EC2", NetworkBorderGroup: "us-east-1"},
+			},
+			verbosity:      "mini",
+			expectedOutput: "3.5.140.0/22,us-east-1,AMAZON,us-east-1\n3.5.140.0/22,us-east-1,EC2,us-east-1\n",
 		},
 		{
 			name: "IPv6 - Verbosity Mini",
@@ -255,7 +274,7 @@ func TestPrintListedValues(t *testing.T) {
 		out := captureStdout(t, func() {
 			require.NoError(t, printListedValues(nil, "regions"))
 		})
-		assert.Equal(t, "No values to display.\n", out)
+		assert.Empty(t, out, "placeholder belongs on stderr")
 	})
 
 	t.Run("unknown dim returns error", func(t *testing.T) {
