@@ -31,6 +31,7 @@ run_and_expect() {
 }
 
 run_and_expect help 'default "config"' --help
+run_and_expect version 'cipr version ' --version
 run_and_expect aws "44.192.140.112/28" aws \
     --source "$ROOT_DIR/internal/testdata/mock_ip_ranges_response.json" \
     --ipv4 --filter-region us-east-1 --filter-service EBS \

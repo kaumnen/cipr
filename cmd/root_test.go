@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -88,4 +89,11 @@ func TestEnvironmentRequiresCiprPrefix(t *testing.T) {
 	t.Setenv("CIPR_NO_CACHE", "true")
 	assert.Equal(t, "prefixed.json", viper.GetString("source"))
 	assert.True(t, viper.GetBool("no_cache"))
+}
+
+func TestResolveVersion(t *testing.T) {
+	assert.Equal(t, "v1.2.3", resolveVersion("v1.2.3"))
+	if fallback := resolveVersion(""); fallback != "" {
+		assert.True(t, strings.HasPrefix(fallback, "v"), "unexpected build-info version %q", fallback)
+	}
 }
