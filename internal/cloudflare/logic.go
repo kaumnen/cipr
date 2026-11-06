@@ -3,6 +3,7 @@ package cloudflare
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/kaumnen/cipr/internal/utils"
@@ -46,7 +47,7 @@ func parseIPRanges(rawData string) ([]string, error) {
 
 func printIPRanges(ipRanges []string, verbosity string) {
 	if len(ipRanges) == 0 {
-		fmt.Println("No IP ranges to display.")
+		fmt.Fprintln(os.Stderr, "No IP ranges to display.")
 		return
 	}
 

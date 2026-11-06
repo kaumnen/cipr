@@ -117,7 +117,7 @@ func printListedValues(prefixes []Prefix, dim string) error {
 	}
 	values = utils.DedupeSorted(values)
 	if len(values) == 0 {
-		fmt.Println("No values to display.")
+		fmt.Fprintln(os.Stderr, "No values to display.")
 		return nil
 	}
 	for _, v := range values {
@@ -302,7 +302,7 @@ func ipVersionMatches(addr, ipType string) bool {
 
 func printIPRanges(prefixes []Prefix, verbosity string) {
 	if len(prefixes) == 0 {
-		fmt.Println("No IP ranges to display.")
+		fmt.Fprintln(os.Stderr, "No IP ranges to display.")
 		return
 	}
 

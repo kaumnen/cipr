@@ -203,7 +203,7 @@ func TestPrintIPRanges(t *testing.T) {
 		verbosity string
 		want      string
 	}{
-		{name: "empty", verbosity: "none", want: "No IP ranges to display.\n"},
+		{name: "empty", verbosity: "none", want: ""},
 		{
 			name: "none",
 			prefixes: []Prefix{
@@ -265,7 +265,7 @@ func TestPrintListedValues(t *testing.T) {
 		out := captureStdout(t, func() {
 			require.NoError(t, printListedValues(nil, "scopes"))
 		})
-		assert.Equal(t, "No values to display.\n", out)
+		assert.Empty(t, out, "placeholder belongs on stderr")
 	})
 	t.Run("unknown dimension", func(t *testing.T) {
 		err := printListedValues(prefixes, "regions")

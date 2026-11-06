@@ -177,7 +177,7 @@ func TestPrintIPRanges(t *testing.T) {
 			name:           "empty list",
 			ranges:         []IPRange{},
 			verbosity:      "none",
-			expectedOutput: "No IP ranges to display.\n",
+			expectedOutput: "",
 		},
 		{
 			name: "none prints CIDR only",
@@ -244,7 +244,7 @@ func TestPrintListedValues(t *testing.T) {
 		out := captureStdout(t, func() {
 			require.NoError(t, printListedValues(nil, "services"))
 		})
-		assert.Equal(t, "No values to display.\n", out)
+		assert.Empty(t, out, "placeholder belongs on stderr")
 	})
 
 	t.Run("unknown dim returns error", func(t *testing.T) {

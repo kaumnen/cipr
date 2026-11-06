@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/kaumnen/cipr/internal/utils"
@@ -102,7 +103,7 @@ func printListedValues(prefixes []IPPrefix, dim string) error {
 	}
 	values = utils.DedupeSorted(values)
 	if len(values) == 0 {
-		fmt.Println("No values to display.")
+		fmt.Fprintln(os.Stderr, "No values to display.")
 		return nil
 	}
 	for _, v := range values {
@@ -200,7 +201,7 @@ func matchesFilter(prefix IPPrefix, filters Filters) bool {
 
 func printIPRanges(ipRanges []IPPrefix, verbosity string) {
 	if len(ipRanges) == 0 {
-		fmt.Println("No IP ranges to display.")
+		fmt.Fprintln(os.Stderr, "No IP ranges to display.")
 		return
 	}
 

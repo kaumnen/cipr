@@ -215,7 +215,7 @@ func TestPrintIPRanges(t *testing.T) {
 			name:      "empty",
 			prefixes:  []Prefix{},
 			verbosity: "none",
-			want:      "No IP ranges to display.\n",
+			want:      "",
 		},
 		{
 			name: "none verbosity",

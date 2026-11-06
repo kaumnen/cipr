@@ -73,7 +73,7 @@ func printListedValues(ranges []IPRange, dim string) error {
 	}
 	values = utils.DedupeSorted(values)
 	if len(values) == 0 {
-		fmt.Println("No values to display.")
+		fmt.Fprintln(os.Stderr, "No values to display.")
 		return nil
 	}
 	for _, v := range values {
@@ -155,7 +155,7 @@ func filtrateIPRanges(ipRanges []IPRange, config Config) []IPRange {
 
 func printIPRanges(ipRanges []IPRange, verbosity string) {
 	if len(ipRanges) == 0 {
-		fmt.Println("No IP ranges to display.")
+		fmt.Fprintln(os.Stderr, "No IP ranges to display.")
 		return
 	}
 
