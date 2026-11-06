@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -49,6 +48,20 @@ func GetCached(ctx context.Context, key string, fetch func(context.Context) (str
 	return body, nil
 }
 
+// DropCache removes the cache entry for source so the next run refetches.
+func DropCache(source string) {
+	if !IsConfiguredSource(source) {
+		return
+	}
+	path, err := cachePath(source)
+	if err != nil {
+		return
+	}
+	if err := os.Remove(path); err == nil {
+		Debugf("cache: dropped %s after parse failure", source)
+	}
+}
+
 func resolveCacheTTL(key string) time.Duration {
 	raw := viper.GetString(key + "_cache_ttl")
 	if raw == "" {
@@ -91,9 +104,6 @@ func readCache(key string, ttl time.Duration) ([]byte, bool, error) {
 	}
 	info, err := os.Stat(path)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, false, nil
-		}
 		return nil, false, nil
 	}
 	if time.Since(info.ModTime()) >= ttl {

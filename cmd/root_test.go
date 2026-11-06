@@ -97,3 +97,23 @@ func TestResolveVersion(t *testing.T) {
 		assert.True(t, strings.HasPrefix(fallback, "v"), "unexpected build-info version %q", fallback)
 	}
 }
+
+func TestInitConfigWithoutHomeUsesDefaults(t *testing.T) {
+	t.Setenv("HOME", "")
+
+	require.NoError(t, initConfig(awsCmd))
+	require.Error(t, initConfig(configureCmd))
+}
+
+func TestInitConfigUnwritableHomeUsesDefaults(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root can write to read-only directories")
+	}
+	home := t.TempDir()
+	require.NoError(t, os.Chmod(home, 0o500))
+	t.Cleanup(func() { _ = os.Chmod(home, 0o700) })
+	t.Setenv("HOME", home)
+
+	require.NoError(t, initConfig(awsCmd))
+	require.Error(t, initConfig(configureCmd))
+}

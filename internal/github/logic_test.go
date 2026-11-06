@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
 
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -300,4 +303,28 @@ func TestGetIPRanges_List(t *testing.T) {
 		_, leaked := seen[k]
 		assert.False(t, leaked, "non-CIDR key %q leaked into services list", k)
 	}
+}
+
+func TestGetIPRanges_ParseFailureDropsCache(t *testing.T) {
+	cacheHome := t.TempDir()
+	t.Setenv("XDG_CACHE_HOME", cacheHome)
+	t.Cleanup(viper.Reset)
+
+	body := "<html>captive portal</html>"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+	viper.Set("github_endpoint", srv.URL)
+
+	err := GetIPRanges(context.Background(), Config{Source: "github", Verbosity: "none"})
+	require.ErrorContains(t, err, "parse github meta json")
+	_, statErr := os.Stat(filepath.Join(cacheHome, "cipr", "github.cache"))
+	assert.True(t, os.IsNotExist(statErr), "unparseable response must not stay cached")
+
+	body = `{"web":["192.30.252.0/22"]}`
+	out := captureStdout(t, func() {
+		require.NoError(t, GetIPRanges(context.Background(), Config{Source: "github", Verbosity: "none"}))
+	})
+	assert.Equal(t, "192.30.252.0/22\n", out)
 }

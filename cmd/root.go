@@ -27,7 +27,11 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 		utils.SetDebug(viper.GetBool("debug"))
-		utils.Debugf("config: using %s", viper.ConfigFileUsed())
+		if used := viper.ConfigFileUsed(); used != "" {
+			utils.Debugf("config: using %s", used)
+		} else {
+			utils.Debugf("config: using defaults")
+		}
 		if err := utils.ValidateProxyURL(viper.GetString("proxy")); err != nil {
 			return err
 		}
@@ -87,24 +91,32 @@ func resolveVersion(linked string) string {
 }
 
 func initConfig(cmd *cobra.Command) error {
-	var configPath string
-	if cfgFile != "" {
-		configPath = cfgFile
-	} else {
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
+	viper.AutomaticEnv()
+	configure := cmd.Name() == configureCmd.Name()
 
+	configPath := cfgFile
+	if configPath == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			if configure {
+				return fmt.Errorf("resolve config path: %w", err)
+			}
+			fmt.Fprintln(os.Stderr, "Warning: no home directory, using default settings")
+			return nil
+		}
 		configPath = filepath.Join(home, ".config", "cipr", "cipr.toml")
 	}
-	viper.SetConfigFile(configPath)
-	viper.SetConfigType("toml")
 
-	if err := ensureConfigFile(configPath, cfgFile == "" || cmd.Name() == configureCmd.Name()); err != nil {
-		return err
+	if err := ensureConfigFile(configPath, cfgFile == "" || configure); err != nil {
+		if configure {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "Warning: %v, using default settings\n", err)
+		return nil
 	}
 
-	viper.AutomaticEnv()
-
+	viper.SetConfigFile(configPath)
+	viper.SetConfigType("toml")
 	if err := viper.ReadInConfig(); err != nil {
 		return fmt.Errorf("read config file: %w", err)
 	}
