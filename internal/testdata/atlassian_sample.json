@@ -1,0 +1,155 @@
+{
+  "creationDate": "2026-11-02T06:08:25.025504",
+  "syncToken": 1793599705,
+  "items": [
+    {
+      "network": "52.82.172.0",
+      "mask_len": 22,
+      "cidr": "52.82.172.0/22",
+      "mask": "255.255.252.0",
+      "region": [
+        "global"
+      ],
+      "product": [
+        "email"
+      ],
+      "direction": [
+        "egress"
+      ],
+      "perimeter": "commercial"
+    },
+    {
+      "network": "104.192.136.0",
+      "mask_len": 21,
+      "cidr": "104.192.136.0/21",
+      "mask": "255.255.248.0",
+      "region": [
+        "ap-southeast-1",
+        "ap-southeast-2",
+        "ca-central-1",
+        "global",
+        "us-east-1",
+        "us-west-1",
+        "us-west-2"
+      ],
+      "product": [
+        "bitbucket",
+        "confluence",
+        "forge",
+        "github-for-jira",
+        "halp",
+        "jira",
+        "opsgenie",
+        "statuspage",
+        "trello"
+      ],
+      "direction": [
+        "egress",
+        "ingress"
+      ],
+      "perimeter": "commercial"
+    },
+    {
+      "network": "131.162.90.20",
+      "mask_len": 30,
+      "cidr": "131.162.90.20/30",
+      "mask": "255.255.255.252",
+      "region": [
+        "gcp-us-central1"
+      ],
+      "product": [
+        "rovo-crawler"
+      ],
+      "direction": [
+        "egress"
+      ],
+      "perimeter": "commercial"
+    },
+    {
+      "network": "2401:1d80:3200::",
+      "mask_len": 64,
+      "cidr": "2401:1d80:3200::/64",
+      "mask": "ffff:ffff:ffff:ffff::",
+      "region": [
+        "ap-northeast-1"
+      ],
+      "product": [
+        "confluence",
+        "forge",
+        "halp",
+        "jira",
+        "opsgenie",
+        "statuspage",
+        "trello"
+      ],
+      "direction": [
+        "egress"
+      ],
+      "perimeter": "commercial"
+    },
+    {
+      "network": "44.220.40.160",
+      "mask_len": 28,
+      "cidr": "44.220.40.160/28",
+      "mask": "255.255.255.240",
+      "region": [
+        "us-east-1"
+      ],
+      "product": [
+        "confluence",
+        "jira",
+        "opsgenie"
+      ],
+      "direction": [
+        "egress"
+      ],
+      "perimeter": "fedramp-moderate"
+    },
+    {
+      "network": "104.192.138.0",
+      "mask_len": 24,
+      "cidr": "104.192.138.0/24",
+      "mask": "255.255.255.0",
+      "region": [
+        "global"
+      ],
+      "product": [
+        "bitbucket",
+        "confluence",
+        "forge",
+        "halp",
+        "jira",
+        "loom",
+        "statuspage",
+        "trello"
+      ],
+      "direction": [
+        "ingress"
+      ],
+      "perimeter": "commercial"
+    },
+    {
+      "network": "2401:1d80:32fd::",
+      "mask_len": 48,
+      "cidr": "2401:1d80:32fd::/48",
+      "mask": "ffff:ffff:ffff::",
+      "region": [
+        "global"
+      ],
+      "product": [
+        "bitbucket",
+        "confluence",
+        "forge",
+        "halp",
+        "jira",
+        "loom",
+        "statuspage",
+        "trello"
+      ],
+      "direction": [
+        "ingress"
+      ],
+      "perimeter": "commercial"
+    }
+  ]
+}

@@ -32,6 +32,11 @@ run_and_expect() {
 
 run_and_expect help 'default "config"' --help
 run_and_expect version 'cipr version ' --version
+run_and_expect atlassian "44.220.40.160/28" atlassian \
+    --source "$ROOT_DIR/internal/testdata/atlassian_sample.json" --ipv4 \
+    --filter-product jira --filter-direction egress \
+    --filter-region us-east-1 --filter-perimeter fedramp-moderate
+test "$(wc -l < "$WORK_DIR/atlassian.out")" -eq 1
 run_and_expect aws "44.192.140.112/28" aws \
     --source "$ROOT_DIR/internal/testdata/mock_ip_ranges_response.json" \
     --ipv4 --filter-region us-east-1 --filter-service EBS \

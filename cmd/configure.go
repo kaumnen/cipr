@@ -22,8 +22,9 @@ var configureCmd = &cobra.Command{
 	Short: "Show or update cipr configuration",
 	Long: `Show or update cipr's managed configuration values.
 
-Source-specific settings use the keys written to cipr.toml, including aws,
-azure, cloudflare_ipv4, cloudflare_ipv6, digitalocean, gcp, github, and icloud.
+Source-specific settings use the keys written to cipr.toml, including
+atlassian, aws, azure, cloudflare_ipv4, cloudflare_ipv6, digitalocean, gcp,
+github and icloud.
 With no update flags, the effective managed configuration is displayed.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runConfigure,
