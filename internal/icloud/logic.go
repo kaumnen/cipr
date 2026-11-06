@@ -40,6 +40,7 @@ func GetIPRanges(ctx context.Context, config Config) error {
 	}
 	ipRanges, err := parseRecords(rawData)
 	if err != nil {
+		utils.DropCache(config.Source)
 		return err
 	}
 	filtered := filtrateIPRanges(ipRanges, config)

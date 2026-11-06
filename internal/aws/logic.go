@@ -75,6 +75,7 @@ func GetIPRanges(ctx context.Context, config Config) error {
 	}
 	readyIPs, err := filtrateIPRanges(rawData, config.IPType, filters)
 	if err != nil {
+		utils.DropCache(config.Source)
 		return err
 	}
 	if config.List != "" {

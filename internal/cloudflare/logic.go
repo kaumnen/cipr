@@ -22,6 +22,7 @@ func GetIPRanges(ctx context.Context, config Config) error {
 	}
 	ipRanges, err := parseIPRanges(rawData)
 	if err != nil {
+		utils.DropCache(config.Source)
 		return err
 	}
 	printIPRanges(filterIPType(ipRanges, config.IPType), config.Verbosity)

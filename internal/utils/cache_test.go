@@ -83,3 +83,17 @@ func TestWriteCache_CreatesDir(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, info.IsDir())
 }
+
+func TestDropCache(t *testing.T) {
+	t.Setenv("XDG_CACHE_HOME", t.TempDir())
+
+	assert.NoError(t, writeCache("aws", []byte("bad")))
+	DropCache("aws")
+	_, hit, _ := readCache("aws", time.Hour)
+	assert.False(t, hit, "configured source cache should be removed")
+
+	assert.NoError(t, writeCache("ranges.json", []byte("kept")))
+	DropCache("ranges.json")
+	_, hit, _ = readCache("ranges.json", time.Hour)
+	assert.True(t, hit, "unconfigured source must not touch the cache")
+}

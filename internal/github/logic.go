@@ -32,6 +32,7 @@ func GetIPRanges(ctx context.Context, config Config) error {
 
 	ranges, err := parseMeta(rawData)
 	if err != nil {
+		utils.DropCache(config.Source)
 		return err
 	}
 
