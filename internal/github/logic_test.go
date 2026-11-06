@@ -189,6 +189,25 @@ func TestPrintIPRanges(t *testing.T) {
 			expectedOutput: "192.30.252.0/22\n2606:50c0::/32\n",
 		},
 		{
+			name: "none prints each CIDR once",
+			ranges: []IPRange{
+				{CIDR: "192.30.252.0/22", Service: "api"},
+				{CIDR: "4.148.0.0/16", Service: "actions"},
+				{CIDR: "192.30.252.0/22", Service: "web"},
+			},
+			verbosity:      "none",
+			expectedOutput: "192.30.252.0/22\n4.148.0.0/16\n",
+		},
+		{
+			name: "mini keeps rows that differ by service",
+			ranges: []IPRange{
+				{CIDR: "192.30.252.0/22", Service: "api"},
+				{CIDR: "192.30.252.0/22", Service: "web"},
+			},
+			verbosity:      "mini",
+			expectedOutput: "192.30.252.0/22,api\n192.30.252.0/22,web\n",
+		},
+		{
 			name: "mini prints CIDR,service",
 			ranges: []IPRange{
 				{CIDR: "4.148.0.0/16", Service: "actions"},

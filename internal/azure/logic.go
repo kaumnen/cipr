@@ -317,7 +317,15 @@ func printIPRanges(prefixes []Prefix, verbosity string) {
 			fmt.Printf("IP Prefix: %s, Region: %s, Service: %s\n", p.Address, p.Region, p.Service)
 		}
 	default:
-		printFunc = func(p Prefix) { fmt.Println(p.Address) }
+		// Prefixes repeat across service tags.
+		seen := make(map[string]struct{}, len(prefixes))
+		printFunc = func(p Prefix) {
+			if _, dup := seen[p.Address]; dup {
+				return
+			}
+			seen[p.Address] = struct{}{}
+			fmt.Println(p.Address)
+		}
 	}
 
 	for _, p := range prefixes {

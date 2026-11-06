@@ -208,10 +208,6 @@ func printIPRanges(ipRanges []IPPrefix, verbosity string) {
 	var printFunc func(IPPrefix)
 
 	switch verbosity {
-	case "none":
-		printFunc = func(ip IPPrefix) {
-			fmt.Println(ip.GetIPAddress())
-		}
 	case "mini":
 		printFunc = func(ip IPPrefix) {
 			fmt.Printf("%s,%s,%s,%s\n",
@@ -223,7 +219,13 @@ func printIPRanges(ipRanges []IPPrefix, verbosity string) {
 				ip.GetIPAddress(), ip.GetRegion(), ip.GetService(), ip.GetNetworkBorderGroup())
 		}
 	default:
+		// Prefixes repeat across services.
+		seen := make(map[string]struct{}, len(ipRanges))
 		printFunc = func(ip IPPrefix) {
+			if _, dup := seen[ip.GetIPAddress()]; dup {
+				return
+			}
+			seen[ip.GetIPAddress()] = struct{}{}
 			fmt.Println(ip.GetIPAddress())
 		}
 	}

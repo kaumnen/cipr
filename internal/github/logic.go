@@ -133,7 +133,13 @@ func printIPRanges(ranges []IPRange, verbosity string) {
 			fmt.Printf("IP Prefix: %s, Service: %s\n", r.CIDR, r.Service)
 		}
 	default:
+		// CIDRs repeat across services.
+		seen := make(map[string]struct{}, len(ranges))
 		printFunc = func(r IPRange) {
+			if _, dup := seen[r.CIDR]; dup {
+				return
+			}
+			seen[r.CIDR] = struct{}{}
 			fmt.Println(r.CIDR)
 		}
 	}
