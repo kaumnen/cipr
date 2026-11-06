@@ -22,7 +22,9 @@ var cloudflareCmd = &cobra.Command{
 		ipv6 := viper.GetBool("cloudflare_ipv6")
 		if !usesConfiguredSources(viper.GetString("source")) {
 			return cloudflare.GetIPRanges(cmd.Context(), cloudflare.Config{
-				Source: utils.ResolveSource("cloudflare"), Verbosity: verbosity,
+				Source:    utils.ResolveSource("cloudflare"),
+				IPType:    resolveIPType(ipv4, ipv6),
+				Verbosity: verbosity,
 			})
 		}
 		both := !ipv4 && !ipv6
@@ -38,6 +40,7 @@ var cloudflareCmd = &cobra.Command{
 			source := utils.ResolveSource("cloudflare_" + version)
 			if err := cloudflare.GetIPRanges(cmd.Context(), cloudflare.Config{
 				Source:    source,
+				IPType:    version,
 				Verbosity: verbosity,
 			}); err != nil {
 				return err

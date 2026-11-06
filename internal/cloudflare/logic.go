@@ -11,6 +11,7 @@ import (
 
 type Config struct {
 	Source    string
+	IPType    string
 	Verbosity string
 }
 
@@ -23,8 +24,27 @@ func GetIPRanges(ctx context.Context, config Config) error {
 	if err != nil {
 		return err
 	}
-	printIPRanges(ipRanges, config.Verbosity)
+	printIPRanges(filterIPType(ipRanges, config.IPType), config.Verbosity)
 	return nil
+}
+
+func filterIPType(ipRanges []string, ipType string) []string {
+	var keep func(string) bool
+	switch ipType {
+	case "ipv4":
+		keep = utils.IsIPv4
+	case "ipv6":
+		keep = utils.IsIPv6
+	default:
+		return ipRanges
+	}
+	var result []string
+	for _, ip := range ipRanges {
+		if keep(ip) {
+			result = append(result, ip)
+		}
+	}
+	return result
 }
 
 func parseIPRanges(rawData string) ([]string, error) {

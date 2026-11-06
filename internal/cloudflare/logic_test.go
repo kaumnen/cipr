@@ -2,6 +2,7 @@ package cloudflare
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"os"
 	"path/filepath"
@@ -135,4 +136,33 @@ func TestPrintIPRanges(t *testing.T) {
 			assert.Equal(t, tc.expectedOutput, buf.String())
 		})
 	}
+}
+
+func TestFilterIPType(t *testing.T) {
+	mixed := []string{"1.1.1.0/24", "2606:4700::/32", "2.2.2.0/24"}
+
+	assert.Equal(t, []string{"1.1.1.0/24", "2.2.2.0/24"}, filterIPType(mixed, "ipv4"))
+	assert.Equal(t, []string{"2606:4700::/32"}, filterIPType(mixed, "ipv6"))
+	assert.Equal(t, mixed, filterIPType(mixed, "both"))
+	assert.Equal(t, mixed, filterIPType(mixed, ""))
+}
+
+func TestGetIPRanges_CustomSourceHonorsIPType(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "mixed.txt")
+	require.NoError(t, os.WriteFile(path, []byte("1.1.1.0/24\n2606:4700::/32\n"), 0o600))
+
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+	os.Stdout = w
+
+	err = GetIPRanges(context.Background(), Config{Source: path, IPType: "ipv6", Verbosity: "none"})
+
+	w.Close()
+	os.Stdout = oldStdout
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+
+	require.NoError(t, err)
+	assert.Equal(t, "2606:4700::/32\n", buf.String())
 }
