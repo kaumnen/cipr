@@ -75,3 +75,17 @@ func TestUsesConfiguredSources(t *testing.T) {
 	assert.False(t, usesConfiguredSources("https://example.test/ranges"))
 	assert.False(t, usesConfiguredSources("ranges.txt"))
 }
+
+func TestEnvironmentRequiresCiprPrefix(t *testing.T) {
+	viper.AutomaticEnv()
+
+	t.Setenv("SOURCE", "unprefixed.json")
+	t.Setenv("VERBOSE", "true")
+	assert.Equal(t, "config", viper.GetString("source"))
+	assert.False(t, viper.GetBool("verbose"))
+
+	t.Setenv("CIPR_SOURCE", "prefixed.json")
+	t.Setenv("CIPR_NO_CACHE", "true")
+	assert.Equal(t, "prefixed.json", viper.GetString("source"))
+	assert.True(t, viper.GetBool("no_cache"))
+}

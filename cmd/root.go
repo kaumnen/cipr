@@ -69,6 +69,8 @@ func init() {
 	viper.BindPFlag("no_cache", rootCmd.PersistentFlags().Lookup("no-cache"))
 	viper.BindPFlag("proxy", rootCmd.PersistentFlags().Lookup("proxy"))
 	viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
+	// Ignore generic names such as DEBUG or SOURCE.
+	viper.SetEnvPrefix("cipr")
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 }
 
