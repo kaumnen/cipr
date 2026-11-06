@@ -42,7 +42,7 @@ func TestParseMeta(t *testing.T) {
 		seen[r.Service]++
 	}
 
-	for _, k := range []string{"verifiable_password_authentication", "ssh_key_fingerprints", "ssh_keys"} {
+	for _, k := range []string{"verifiable_password_authentication", "ssh_key_fingerprints", "ssh_keys", "domains", "commit_signing_keys"} {
 		_, present := seen[k]
 		assert.False(t, present, "non-CIDR key %q must not leak into parsed ranges", k)
 	}
@@ -79,6 +79,17 @@ func TestParseMeta_Validation(t *testing.T) {
 	t.Run("invalid CIDR", func(t *testing.T) {
 		_, err := parseMeta(`{"web":["1.1.1.0/24","not-a-cidr"]}`)
 		assert.ErrorContains(t, err, `service "web" prefix 2`)
+	})
+
+	t.Run("string arrays without CIDRs are ignored", func(t *testing.T) {
+		ranges, err := parseMeta(`{"web":["1.1.1.0/24"],"future_keys":["-----BEGIN PGP PUBLIC KEY BLOCK-----"],"empty":[]}`)
+		require.NoError(t, err)
+		assert.Equal(t, []IPRange{{CIDR: "1.1.1.0/24", Service: "web"}}, ranges)
+	})
+
+	t.Run("invalid entry in a CIDR list still fails", func(t *testing.T) {
+		_, err := parseMeta(`{"web":["not-a-cidr","1.1.1.0/24"]}`)
+		assert.ErrorContains(t, err, `service "web" prefix 1`)
 	})
 
 	t.Run("unknown non-range metadata is ignored", func(t *testing.T) {
@@ -266,7 +277,7 @@ func TestGetIPRanges_List(t *testing.T) {
 		assert.False(t, dup, "duplicate service %q", l)
 		seen[l] = struct{}{}
 	}
-	for _, k := range []string{"ssh_keys", "ssh_key_fingerprints", "verifiable_password_authentication"} {
+	for _, k := range []string{"ssh_keys", "ssh_key_fingerprints", "verifiable_password_authentication", "domains", "commit_signing_keys"} {
 		_, leaked := seen[k]
 		assert.False(t, leaked, "non-CIDR key %q leaked into services list", k)
 	}

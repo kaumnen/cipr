@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
 
 	"github.com/kaumnen/cipr/internal/utils"
@@ -20,15 +21,6 @@ type Config struct {
 	FilterServices []string
 	List           string
 	Verbosity      string
-}
-
-// nonCIDRKeys are top-level keys in the /meta payload whose values are not
-// CIDR arrays. They are skipped during parsing.
-var nonCIDRKeys = map[string]struct{}{
-	"verifiable_password_authentication": {},
-	"ssh_key_fingerprints":               {},
-	"ssh_keys":                           {},
-	"domains":                            {},
 }
 
 func GetIPRanges(ctx context.Context, config Config) error {
@@ -58,17 +50,19 @@ func parseMeta(rawData string) ([]IPRange, error) {
 
 	services := make([]string, 0, len(raw))
 	for k := range raw {
-		if _, skip := nonCIDRKeys[k]; skip {
-			continue
-		}
 		services = append(services, k)
 	}
 	sort.Strings(services)
 
+	// /meta also holds keys and other metadata. A service is a list
+	// with at least one CIDR.
 	var ranges []IPRange
 	for _, service := range services {
 		var cidrs []string
 		if err := json.Unmarshal(raw[service], &cidrs); err != nil {
+			continue
+		}
+		if !slices.ContainsFunc(cidrs, utils.IsCIDR) {
 			continue
 		}
 		for i, cidr := range cidrs {
