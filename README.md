@@ -5,7 +5,7 @@
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/kaumnen/cipr/releaser.yml)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kaumnen/cipr)
 
-cipr is a command-line interface (CLI) tool designed to simplify the process of retrieving IP ranges from AWS, Azure, Cloudflare, DigitalOcean, GitHub, Google Cloud, and iCloud Private Relay. It provides a quick and efficient way to access up-to-date IP ranges, which can be particularly useful for network administrators, security professionals, and developers working with cloud infrastructure.
+cipr is a CLI that fetches IP ranges from AWS, Azure, Cloudflare, DigitalOcean, GitHub, Google Cloud and iCloud Private Relay. Use it to keep firewall rules and allowlists up to date.
 
 ## Installation
 
@@ -16,7 +16,7 @@ brew install kaumnen/tap/cipr
 ```
 
 > [!NOTE]  
-> Currently available for Linux and MacOS systems.
+> Available for Linux and macOS.
 >
 > Documentation available at: [cipr.kaumnen.com](https://cipr.kaumnen.com/docs/intro)
 
