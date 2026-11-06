@@ -1,0 +1,36 @@
+name: Check live endpoints
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/live-endpoints.yml
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: [aws, azure, cloudflare, do, gcp, github, icloud]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        run: go build -o cipr .
+
+      - name: Fetch ${{ matrix.provider }}
+        run: |
+          ./cipr ${{ matrix.provider }} --no-cache > ranges.txt
+          test -s ranges.txt
+          echo "${{ matrix.provider }}: $(wc -l < ranges.txt) ranges" >> "$GITHUB_STEP_SUMMARY"
