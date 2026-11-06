@@ -5,7 +5,7 @@
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/kaumnen/cipr/releaser.yml)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kaumnen/cipr)
 
-cipr is a CLI that fetches IP ranges from AWS, Azure, Cloudflare, DigitalOcean, GitHub, Google Cloud and iCloud Private Relay. Use it to keep firewall rules and allowlists up to date.
+cipr is a CLI that fetches IP ranges from Atlassian, AWS, Azure, Cloudflare, DigitalOcean, GitHub, Google Cloud and iCloud Private Relay. Use it to keep firewall rules and allowlists up to date.
 
 ## Installation
 

@@ -11,6 +11,7 @@ import (
 // DefaultEndpoints maps a provider config-key prefix to its default URL.
 // createDefaultConfig writes <key>_endpoint and <key>_local_file for each entry.
 var DefaultEndpoints = map[string]string{
+	"atlassian":       "https://ip-ranges.atlassian.com/",
 	"aws":             "https://ip-ranges.amazonaws.com/ip-ranges.json",
 	"azure":           "https://www.microsoft.com/en-us/download/details.aspx?id=56519",
 	"cloudflare_ipv4": "https://www.cloudflare.com/ips-v4/",
