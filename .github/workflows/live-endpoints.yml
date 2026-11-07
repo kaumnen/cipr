@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        provider: [atlassian, aws, azure, cloudflare, do, fastly, gcp, github, icloud]
+        provider: [atlassian, aws, azure, cloudflare, do, fastly, gcp, github, googlebot, icloud]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

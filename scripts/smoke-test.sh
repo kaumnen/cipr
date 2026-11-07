@@ -63,6 +63,12 @@ test "$(wc -l < "$WORK_DIR/fastly-v6.out")" -eq 3
 run_and_expect github "192.30.252.0/22" github \
     --source "$ROOT_DIR/internal/testdata/github_meta_sample.json" --ipv4 \
     --filter-service web
+run_and_expect googlebot-v4 "192.178.4.0/27" googlebot \
+    --source "$ROOT_DIR/internal/testdata/googlebot_sample.json" --ipv4
+test "$(wc -l < "$WORK_DIR/googlebot-v4.out")" -eq 10
+run_and_expect googlebot-v6 "2001:4860:4801:10::/64" googlebot \
+    --source "$ROOT_DIR/internal/testdata/googlebot_sample.json" --ipv6
+test "$(wc -l < "$WORK_DIR/googlebot-v6.out")" -eq 5
 run_and_expect icloud "172.224.224.0/27" icloud \
     --source "$ROOT_DIR/internal/testdata/icloud.csv" --ipv4 \
     --filter-country GB --filter-city London

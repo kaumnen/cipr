@@ -21,6 +21,7 @@ var DefaultEndpoints = map[string]string{
 	"fastly":          "https://api.fastly.com/public-ip-list",
 	"gcp":             "https://www.gstatic.com/ipranges/cloud.json",
 	"github":          "https://api.github.com/meta",
+	"googlebot":       "https://developers.google.com/static/crawling/ipranges/common-crawlers.json",
 }
 
 // ResolveSource returns the source token to pass to GetRawData. The "config"
